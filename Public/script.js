@@ -97,7 +97,7 @@ if (countdownEl && redirectText) {
 
     if (seconds <= 0) {
       clearInterval(countdown);
-      window.location.replace("./index.html"); // Adjust path if needed
+      window.location.replace("https://realratnadwip.github.io/"); // Adjust path if needed
     }
   }, 1000);
 }

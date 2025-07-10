@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HTML Tags Reference with Examples</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        h2 { margin-top: 40px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #555; padding: 10px; text-align: left; }
+        th { background-color: #444; color: #fff; }
+        tr:nth-child(even) { background-color: #f0f0f0; }
+        .example { background: #fff; border: 1px solid #ccc; padding: 10px; margin: 10px 0; font-family: monospace; }
+        code { background: #eee; padding: 2px 4px; font-size: 90%; }
+        ul { margin: 5px 0 15px 20px; }
+    </style>
+</head>
+<body>
+
+<h1>HTML Tags Reference with Interactive Examples</h1>
+
+<h2>Text Formatting Tags</h2>
+<ul>
+    <li><b>&lt;b&gt;</b> — Bold text, no attributes.</li>
+    <li><b>&lt;strong&gt;</b> — Strong importance, no attributes.</li>
+    <li><b>&lt;i&gt;</b> — Italic text, no attributes.</li>
+    <li><b>&lt;em&gt;</b> — Emphasized text, no attributes.</li>
+    <li><b>&lt;u&gt;</b> — Underlined text, no attributes.</li>
+    <li><b>&lt;mark&gt;</b> — Marked/highlighted text, no attributes.</li>
+    <li><b>&lt;sub&gt;</b> — Subscript text, no attributes.</li>
+    <li><b>&lt;sup&gt;</b> — Superscript text, no attributes.</li>
+    <li><b>&lt;ins&gt;</b> — Inserted text, no attributes.</li>
+    <li><b>&lt;del&gt;</b> — Deleted text, no attributes.</li>
+    <li><b>&lt;br&gt;</b> — Line break, no closing tag or attributes.</li>
+    <li><b>&lt;hr&gt;</b> — Horizontal rule.
+        <ul>
+            <li>size: height of the line (e.g. size="3")</li>
+            <li>width: width in px or % (e.g. width="50%")</li>
+            <li>color: color of the line (e.g. color="red")</li>
+        </ul>
+    </li>
+</ul>
+<div class="example">
+<b>Bold</b> <strong>Strong</strong> <i>Italic</i> <em>Emphasized</em> <u>Underline</u><br>
+<mark>Highlighted</mark> H<sub>2</sub>O x<sup>2</sup><br>
+<ins>Inserted</ins> <del>Deleted</del><br>
+Line A<br>Line B<br><hr size="3" width="60%" color="blue">
+</div>
+
+<h2>Document Structure Tags</h2>
+<ul>
+    <li><b>&lt;!DOCTYPE&gt;</b> — Declares the HTML version (e.g., &lt;!DOCTYPE html&gt;).</li>
+    <li><b>&lt;html&gt;</b> — Root element.
+        <ul><li>lang: language code (e.g., lang="en")</li></ul></li>
+    <li><b>&lt;head&gt;</b> — Contains meta, title, styles, scripts.</li>
+    <li><b>&lt;title&gt;</b> — Title shown in browser tab.</li>
+    <li><b>&lt;link&gt;</b> — External resources.
+        <ul>
+            <li>rel: relationship (e.g., "stylesheet")</li>
+            <li>href: URL to the file</li>
+        </ul>
+    </li>
+    <li><b>&lt;style&gt;</b> — Internal CSS.</li>
+    <li><b>&lt;script&gt;</b> — JavaScript (inline or src).</li>
+    <li><b>&lt;body&gt;</b> — Page content.
+        <ul>
+            <li>bgcolor: background color</li>
+            <li>text: text color</li>
+        </ul>
+    </li>
+</ul>
+<div class="example">
+&lt;!DOCTYPE html&gt;<br>
+&lt;html lang="en"&gt;<br>
+&nbsp;&nbsp;&lt;head&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;My Page&lt;/title&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;link rel="stylesheet" href="style.css"&gt;<br>
+&nbsp;&nbsp;&lt;/head&gt;<br>
+&nbsp;&nbsp;&lt;body bgcolor="lightyellow" text="black"&gt;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Hello World!<br>
+&nbsp;&nbsp;&lt;/body&gt;<br>
+&lt;/html&gt;
+</div>
+
+<h2>List Tags</h2>
+<ul>
+    <li><b>&lt;ul&gt;</b> — Unordered list.
+        <ul><li>type: disc | circle | square</li></ul></li>
+    <li><b>&lt;ol&gt;</b> — Ordered list.
+        <ul><li>type: 1 | A | a | I | i<br>start: starting number (e.g., start="5")</li></ul></li>
+    <li><b>&lt;li&gt;</b> — List item.
+        <ul><li>value: custom number (only in &lt;ol&gt;)</li></ul></li>
+</ul>
+<div class="example">
+<ul type="square"><li>Apple</li><li>Banana</li></ul>
+<ol type="A" start="3"><li>Third</li><li>Fourth</li></ol>
+</div>
+
+<h2>Link and Media Tags</h2>
+<ul>
+    <li><b>&lt;a&gt;</b> — Anchor (link).
+        <ul>
+            <li>href: URL</li>
+            <li>target: _blank | _self | _parent | _top</li>
+            <li>title: tooltip text</li>
+        </ul>
+    </li>
+    <li><b>&lt;img&gt;</b> — Image.
+        <ul>
+            <li>src: image URL</li>
+            <li>alt: alt text</li>
+            <li>width, height: dimensions</li>
+        </ul>
+    </li>
+    <li><b>&lt;marquee&gt;</b> — Scrolling text (deprecated).
+        <ul>
+            <li>direction: left | right | up | down</li>
+            <li>behavior: scroll | slide | alternate</li>
+        </ul>
+    </li>
+</ul>
+<div class="example">
+<a href="https://pastebin.com/u/Realratnadwip" target="_blank" title="Go to Example">Visit Example.com</a><br>
+<img src="./Image.png" alt="placeholder" width=40%><br>
+<marquee direction="right" behavior="alternate">Moving Text</marquee>
+</div>
+
+<h2>Table Tags</h2>
+<ul>
+    <li><b>&lt;table&gt;</b> — Table container.
+        <ul>
+            <li>border: size in px</li>
+            <li>width: table width</li>
+            <li>cellpadding: spacing inside cells</li>
+        </ul>
+    </li>
+    <li><b>&lt;caption&gt;</b> — Table title. <ul><li>align: top | bottom (deprecated)</li></ul></li>
+    <li><b>&lt;thead&gt;, &lt;tbody&gt;, &lt;tfoot&gt;</b> — Table sections.</li>
+    <li><b>&lt;tr&gt;</b> — Table row.
+        <ul><li>align: left | center | right<br>bgcolor: color</li></ul></li>
+    <li><b>&lt;td&gt;</b> — Table cell.
+        <ul><li>colspan, rowspan</li></ul></li>
+</ul>
+<div class="example">
+<table border="1" width="80%" cellpadding="5">
+<caption>Sample Table</caption>
+<thead>
+<tr bgcolor="#ccccff"><th>Item</th><th>Price</th><th>Quantity</th></tr>
+</thead>
+<tbody>
+<tr><td>Apple</td><td>$1</td><td>10</td></tr>
+<tr><td>Banana</td><td>$0.5</td><td>20</td></tr>
+</tbody>
+<tfoot>
+<tr><td colspan="2">Total</td><td>30</td></tr>
+</tfoot>
+</table>
+</div>
+
+</body>
+</html>
