@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Fetch and display last update date
-fetch('https://api.github.com/repos/RealRatnadwip/RealRatnadwip.github.io/commits?./Public/contact.html')
+fetch('https://api.github.com/repos/RealRatnadwip/RealRatnadwip.github.io/commits?')
   .then(response => response.json())
   .then(data => {
     const date = new Date(data[0].commit.committer.date);
