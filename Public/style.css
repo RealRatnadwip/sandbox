@@ -783,7 +783,7 @@ section a:hover {
 }
 
 
-.image-card:hover img {
+.pr-image-card:hover img {
   transform: scale(1.05);
 }
 
