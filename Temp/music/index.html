@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="player-box">
+            <!-- Album Art -->
+            <div class="album-art-container">
+                <img id="albumArt" src="data:image/png;base64,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" alt="Album Art" class="album-art">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            </div>
+
+            <!-- Song Info -->
+            <div class="song-info">
+                <div class="song-name-container">
+                    <h1 id="songName" class="song-name">Select a song to play</h1>
+                    <button id="muteBtn" class="mute-btn">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+                <div class="artist-name-container">
+                    <p id="artistName" class="artist-name">Unknown Artist</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button id="prevBtn" class="control-btn">
+                    <i class="fas fa-backward"></i>
+                </button>
+                <button id="playPauseBtn" class="control-btn play-pause">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button id="nextBtn" class="control-btn">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="time-info">
+                    <span id="currentTime">0:00</span>
+                    <span id="totalTime">0:00</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                        <div class="progress-handle" id="progressHandle"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auth Button -->
+            <button id="authBtn" class="auth-btn">
+                <i class="fab fa-google"></i>
+                Connect to Google Drive
+            </button>
+        </div>
+    </div>
+
+    <!-- Audio Element -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="script.js"></script>
+</body>
+</html>
