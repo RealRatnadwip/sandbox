@@ -75,7 +75,7 @@ class MusicPlayer {
             });
 
             await gapi.client.init({
-                apiKey: '', // Use OAuth token instead
+                apiKey: '', // We'll use OAuth token instead
                 discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
             });
             
@@ -139,6 +139,10 @@ class MusicPlayer {
 
     handleAuthClick() {
         try {
+            console.log('Auth button clicked');
+            console.log('isGoogleAPIReady:', this.isGoogleAPIReady);
+            console.log('tokenClient:', this.tokenClient);
+            
             console.log('Auth button clicked');
             console.log('isGoogleAPIReady:', this.isGoogleAPIReady);
             console.log('tokenClient:', this.tokenClient);
