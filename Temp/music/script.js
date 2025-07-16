@@ -72,7 +72,7 @@ class MusicPlayer {
 
             // Initialize auth2
             this.authInstance = await gapi.auth2.init({
-                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb', // Replace with your actual client ID (without .apps.googleusercontent.com)
+                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb.apps.googleusercontent.com', // Replace with your full client ID (including .apps.googleusercontent.com)
                 scope: 'https://www.googleapis.com/auth/drive.readonly'
             });
 
