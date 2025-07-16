@@ -224,6 +224,8 @@ class MusicPlayer {
             
         } catch (error) {
             console.error('Failed to load song:', error);
+            console.error('File ID that failed:', fileId);
+            console.error('Error details:', error.result?.error);
             this.hideLoading();
             
             // Try next song on error
