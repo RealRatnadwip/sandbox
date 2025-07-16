@@ -7,6 +7,7 @@ class MusicPlayer {
         this.isMuted = false;
         this.isAuthenticated = false;
         this.accessToken = null;
+        this.tokenClient = null;
         
         this.initializeElements();
         this.setupEventListeners();
@@ -50,52 +51,82 @@ class MusicPlayer {
 
     async initializeGoogleAPI() {
         try {
-            // Wait for gapi to be available
-            await new Promise((resolve, reject) => {
-                const checkGapi = () => {
-                    if (typeof gapi !== 'undefined') {
-                        resolve();
-                    } else {
-                        setTimeout(checkGapi, 100);
-                    }
-                };
-                checkGapi();
-            });
+            // Wait for both gapi and google to be available
+            await Promise.all([
+                this.waitForGapi(),
+                this.waitForGoogle()
+            ]);
 
-            // Load auth2 library
+            // Initialize gapi client
             await new Promise((resolve, reject) => {
-                gapi.load('auth2', {
+                gapi.load('client', {
                     callback: resolve,
                     onerror: reject
                 });
             });
 
-            // Initialize auth2
-            this.authInstance = await gapi.auth2.init({
-                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb.apps.googleusercontent.com', // Replace with your full client ID (including .apps.googleusercontent.com)
-                scope: 'https://www.googleapis.com/auth/drive.readonly'
+            await gapi.client.init({
+                apiKey: '', //Use OAuth token instead
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
             });
 
-            // Check if already signed in
-            if (this.authInstance.isSignedIn.get()) {
-                this.handleAuthSuccess();
-            }
+            // Initialize Google Identity Services
+            this.tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb.apps.googleusercontent.com', // Replace with your full client ID
+                scope: 'https://www.googleapis.com/auth/drive.readonly',
+                callback: (response) => {
+                    if (response.error) {
+                        console.error('Token error:', response.error);
+                        alert(`Authentication failed: ${response.error}`);
+                        return;
+                    }
+                    this.accessToken = response.access_token;
+                    gapi.client.setToken({access_token: this.accessToken});
+                    this.handleAuthSuccess();
+                }
+            });
             
             console.log('Google API initialized successfully');
         } catch (error) {
             console.error('Failed to initialize Google API:', error);
-            alert('Failed to initialize Google API. Please check your client ID and try refreshing the page.');
+            alert('Failed to initialize Google API. Please check your setup and try refreshing the page.');
         }
     }
 
-    async handleAuthClick() {
+    waitForGapi() {
+        return new Promise((resolve) => {
+            const checkGapi = () => {
+                if (typeof gapi !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(checkGapi, 100);
+                }
+            };
+            checkGapi();
+        });
+    }
+
+    waitForGoogle() {
+        return new Promise((resolve) => {
+            const checkGoogle = () => {
+                if (typeof google !== 'undefined' && google.accounts) {
+                    resolve();
+                } else {
+                    setTimeout(checkGoogle, 100);
+                }
+            };
+            checkGoogle();
+        });
+    }
+
+    handleAuthClick() {
         try {
-            if (!this.authInstance) {
+            if (!this.tokenClient) {
                 throw new Error('Google API not initialized');
             }
             
-            const user = await this.authInstance.signIn();
-            this.handleAuthSuccess();
+            // Request access token
+            this.tokenClient.requestAccessToken({prompt: 'consent'});
         } catch (error) {
             console.error('Authentication failed:', error);
             alert(`Authentication failed: ${error.message}. Please try again.`);
@@ -104,7 +135,6 @@ class MusicPlayer {
 
     async handleAuthSuccess() {
         this.isAuthenticated = true;
-        this.accessToken = this.authInstance.currentUser.get().getAuthResponse().access_token;
         
         this.authSection.style.display = 'none';
         this.showLoading();
@@ -123,11 +153,9 @@ class MusicPlayer {
 
     async loadSongIds() {
         try {
-            // Load CSV file from your repository
-            const response = await fetch('songs.csv'); // Make sure this file exists in your repo
+            const response = await fetch('songs.csv');
             const csvText = await response.text();
             
-            // Parse CSV - assuming it's a simple format with one file ID per line
             this.songIds = csvText.split('\n')
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
@@ -150,23 +178,18 @@ class MusicPlayer {
         
         try {
             const fileId = this.songIds[index];
-            const audioUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
             
-            // Load audio with authorization
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`
-                }
+            // Get file using Google Drive API v3
+            const response = await gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
             });
+
+            // Convert response to blob
+            const blob = new Blob([response.body], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(blob);
             
-            if (!response.ok) {
-                throw new Error(`Failed to load audio: ${response.status}`);
-            }
-            
-            const blob = await response.blob();
-            const audioUrl2 = URL.createObjectURL(blob);
-            
-            this.audioPlayer.src = audioUrl2;
+            this.audioPlayer.src = audioUrl;
             
             // Extract metadata
             await this.extractMetadata(blob);
@@ -331,5 +354,3 @@ class MusicPlayer {
         }
     }
 }
-
-// The initialization is now handled in the HTML file
