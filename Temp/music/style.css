@@ -61,6 +61,18 @@ body {
     transform: translateY(-2px);
 }
 
+.auth-btn:disabled {
+    background: #666;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.auth-btn:disabled:hover {
+    background: #666;
+    transform: none;
+}
+
 .auth-btn i {
     margin-right: 8px;
 }

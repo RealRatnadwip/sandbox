@@ -8,6 +8,7 @@ class MusicPlayer {
         this.isAuthenticated = false;
         this.accessToken = null;
         this.tokenClient = null;
+        this.isGoogleAPIReady = false;
         
         this.initializeElements();
         this.setupEventListeners();
@@ -24,6 +25,10 @@ class MusicPlayer {
         this.prevBtn = document.getElementById('prevBtn');
         this.nextBtn = document.getElementById('nextBtn');
         this.muteBtn = document.getElementById('muteBtn');
+        
+        // Disable auth button initially
+        this.authButton.disabled = true;
+        this.authButton.textContent = 'Loading...';
         
         this.albumArt = document.getElementById('albumArt');
         this.songTitle = document.getElementById('songTitle');
@@ -51,11 +56,15 @@ class MusicPlayer {
 
     async initializeGoogleAPI() {
         try {
+            console.log('Starting Google API initialization...');
+            
             // Wait for both gapi and google to be available
             await Promise.all([
                 this.waitForGapi(),
                 this.waitForGoogle()
             ]);
+            
+            console.log('Google libraries loaded');
 
             // Initialize gapi client
             await new Promise((resolve, reject) => {
@@ -66,9 +75,11 @@ class MusicPlayer {
             });
 
             await gapi.client.init({
-                apiKey: '', //Use OAuth token instead
+                apiKey: '', // Use OAuth token instead
                 discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
             });
+            
+            console.log('GAPI client initialized');
 
             // Initialize Google Identity Services
             this.tokenClient = google.accounts.oauth2.initTokenClient({
@@ -86,10 +97,17 @@ class MusicPlayer {
                 }
             });
             
+            this.isGoogleAPIReady = true;
             console.log('Google API initialized successfully');
+            
+            // Enable the auth button
+            this.authButton.disabled = false;
+            this.authButton.textContent = 'Sign in with Google';
+            
         } catch (error) {
             console.error('Failed to initialize Google API:', error);
             alert('Failed to initialize Google API. Please check your setup and try refreshing the page.');
+            this.authButton.textContent = 'Initialization Failed - Refresh Page';
         }
     }
 
@@ -121,8 +139,12 @@ class MusicPlayer {
 
     handleAuthClick() {
         try {
-            if (!this.tokenClient) {
-                throw new Error('Google API not initialized');
+            console.log('Auth button clicked');
+            console.log('isGoogleAPIReady:', this.isGoogleAPIReady);
+            console.log('tokenClient:', this.tokenClient);
+            
+            if (!this.isGoogleAPIReady || !this.tokenClient) {
+                throw new Error('Google API not initialized. Please wait or refresh the page.');
             }
             
             // Request access token
