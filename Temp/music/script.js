@@ -9,6 +9,9 @@ class MusicPlayer {
         this.accessToken = null;
         this.tokenClient = null;
         this.isGoogleAPIReady = false;
+        this.currentBlobUrl = null; // Track current blob URL for cleanup
+        this.nextSongData = null; // Pre-loaded next song data
+        this.isPreloading = false; // Prevent multiple pre-load attempts
         
         this.initializeElements();
         this.setupEventListeners();
@@ -200,36 +203,37 @@ class MusicPlayer {
     async loadSong(index) {
         if (index < 0 || index >= this.songIds.length) return;
         
+        // Clean up previous blob URL to free memory
+        if (this.currentBlobUrl) {
+            URL.revokeObjectURL(this.currentBlobUrl);
+            this.currentBlobUrl = null;
+        }
+        
         this.showLoading();
         this.albumArtLoaded = false; // Reset album art flag
         
         try {
-            const fileId = this.songIds[index];
+            let songData;
             
-            // Use authenticated fetch to get the file
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                headers: {
-                    'Authorization': `Bearer ${this.accessToken}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Check if we have pre-loaded data for this song
+            if (this.nextSongData && this.nextSongData.index === index) {
+                console.log('Using pre-loaded song data');
+                songData = this.nextSongData;
+                this.nextSongData = null; // Clear pre-loaded data
+            } else {
+                // Load song data normally
+                songData = await this.fetchSongData(index);
             }
             
-            // Get the response as blob
-            const blob = await response.blob();
-            console.log('Blob created:', blob.type, blob.size);
-            
-            // Create object URL for audio player
-            const audioUrl = URL.createObjectURL(blob);
-            this.audioPlayer.src = audioUrl;
+            // Set up audio player
+            this.currentBlobUrl = songData.audioUrl;
+            this.audioPlayer.src = songData.audioUrl;
             
             // Extract metadata from the blob
-            await this.extractMetadataFromBlob(blob);
+            await this.extractMetadataFromBlob(songData.blob);
             
             // Get file metadata from Google Drive API
-            await this.getFileMetadata(fileId);
+            await this.getFileMetadata(songData.fileId);
             
             this.hideLoading();
             
@@ -293,6 +297,69 @@ class MusicPlayer {
             this.songTitle.textContent = 'Unknown Title';
             this.artistName.textContent = 'Unknown Artist';
             this.setupTextScrolling();
+        }
+    }
+
+    async fetchSongData(index) {
+        const fileId = this.songIds[index];
+        
+        // Use authenticated fetch to get the file
+        const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: {
+                'Authorization': `Bearer ${this.accessToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // Get the response as blob
+        const blob = await response.blob();
+        console.log('Blob created:', blob.type, blob.size);
+        
+        // Create object URL
+        const audioUrl = URL.createObjectURL(blob);
+        
+        return {
+            index,
+            fileId,
+            blob,
+            audioUrl
+        };
+    }
+
+    async preloadNextSong() {
+        // Don't preload if already preloading or no next song
+        if (this.isPreloading || this.currentSongIndex >= this.songIds.length - 1) {
+            return;
+        }
+        
+        // Don't preload if next song is already preloaded
+        if (this.nextSongData && this.nextSongData.index === this.currentSongIndex + 1) {
+            return;
+        }
+        
+        this.isPreloading = true;
+        
+        try {
+            console.log('Pre-loading next song...');
+            const nextIndex = this.currentSongIndex + 1;
+            
+            // Clean up any existing pre-loaded data
+            if (this.nextSongData) {
+                URL.revokeObjectURL(this.nextSongData.audioUrl);
+            }
+            
+            // Pre-load next song
+            this.nextSongData = await this.fetchSongData(nextIndex);
+            console.log('Next song pre-loaded successfully');
+            
+        } catch (error) {
+            console.warn('Failed to pre-load next song:', error);
+            this.nextSongData = null;
+        } finally {
+            this.isPreloading = false;
         }
     }
 
@@ -390,6 +457,12 @@ class MusicPlayer {
 
     async previousSong() {
         if (this.currentSongIndex > 0) {
+            // Clean up pre-loaded data since we're going backwards
+            if (this.nextSongData) {
+                URL.revokeObjectURL(this.nextSongData.audioUrl);
+                this.nextSongData = null;
+            }
+            
             this.currentSongIndex--;
             await this.loadSong(this.currentSongIndex);
             // Reset play state when manually skipping
@@ -433,6 +506,11 @@ class MusicPlayer {
             const progressPercent = (currentTime / duration) * 100;
             this.progressFill.style.width = `${progressPercent}%`;
             this.currentTime.textContent = this.formatTime(currentTime);
+            
+            // Pre-load next song when current song is 80% complete
+            if (progressPercent >= 80 && !this.isPreloading) {
+                this.preloadNextSong();
+            }
         }
     }
 
