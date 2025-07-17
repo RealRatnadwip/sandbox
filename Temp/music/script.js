@@ -50,7 +50,7 @@ class MusicPlayer {
         
         this.audioPlayer.addEventListener('loadedmetadata', () => this.updateDuration());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
-        this.audioPlayer.addEventListener('ended', () => this.nextSong());
+        this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
     }
 
@@ -354,6 +354,29 @@ class MusicPlayer {
         }, 100);
     }
 
+    async handleSongEnd() {
+        console.log('Song ended, auto-playing next song...');
+        if (this.currentSongIndex < this.songIds.length - 1) {
+            this.currentSongIndex++;
+            await this.loadSong(this.currentSongIndex);
+            // Auto-play the next song
+            setTimeout(() => {
+                this.audioPlayer.play().then(() => {
+                    this.isPlaying = true;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    console.log('Next song auto-playing');
+                }).catch(error => {
+                    console.log('Auto-play blocked by browser, user needs to click play');
+                    // Browser blocked auto-play, user needs to manually play
+                });
+            }, 500); // Small delay to ensure audio is loaded
+        } else {
+            console.log('Reached end of playlist');
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }
+    }
+
     togglePlayPause() {
         if (this.isPlaying) {
             this.audioPlayer.pause();
@@ -368,18 +391,20 @@ class MusicPlayer {
     async previousSong() {
         if (this.currentSongIndex > 0) {
             this.currentSongIndex--;
+            await this.loadSong(this.currentSongIndex);
+            // Reset play state when manually skipping
             this.isPlaying = false;
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            await this.loadSong(this.currentSongIndex);
         }
     }
 
     async nextSong() {
         if (this.currentSongIndex < this.songIds.length - 1) {
             this.currentSongIndex++;
+            await this.loadSong(this.currentSongIndex);
+            // Reset play state when manually skipping
             this.isPlaying = false;
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            await this.loadSong(this.currentSongIndex);
         }
     }
 
