@@ -205,8 +205,15 @@ class MusicPlayer {
         try {
             const fileId = this.songIds[index];
             
-            // Use direct Google Drive streaming URL
-            const audioUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+            // Get file content using Google Drive API with authentication
+            const response = await gapi.client.drive.files.get({
+                fileId: fileId,
+                alt: 'media'
+            });
+            
+            // Create blob URL from the response
+            const blob = new Blob([response.body], { type: 'audio/mpeg' });
+            const audioUrl = URL.createObjectURL(blob);
             
             this.audioPlayer.src = audioUrl;
             
@@ -282,47 +289,60 @@ class MusicPlayer {
     }
 
     async extractMetadataFromAudio() {
-        return new Promise((resolve, reject) => {
-            // Create a fetch request to get the audio file for metadata extraction
-            fetch(this.audioPlayer.src)
-                .then(response => response.blob())
-                .then(blob => {
-                    jsmediatags.read(blob, {
-                        onSuccess: (tag) => {
-                            const { title, artist, picture } = tag.tags;
-                            
-                            // Update song info only if metadata is available
-                            if (title) {
-                                this.songTitle.textContent = title;
-                            }
-                            if (artist) {
-                                this.artistName.textContent = artist;
-                            }
-                            
-                            // Handle artist name scrolling
-                            this.setupTextScrolling();
-                            
-                            // Update album art
-                            if (picture) {
-                                const { data, type } = picture;
-                                const byteArray = new Uint8Array(data);
-                                const albumBlob = new Blob([byteArray], { type });
-                                const url = URL.createObjectURL(albumBlob);
-                                this.albumArt.src = url;
-                            }
-                            
-                            resolve();
-                        },
-                        onError: (error) => {
-                            console.warn('Metadata extraction failed, using filename info:', error);
-                            resolve(); // Don't reject, just use filename-based info
-                        }
-                    });
-                })
-                .catch(error => {
-                    console.warn('Could not fetch audio for metadata extraction:', error);
-                    resolve(); // Don't reject, just use filename-based info
+        return new Promise(async (resolve) => {
+            try {
+                // Get the current file ID
+                const fileId = this.songIds[this.currentSongIndex];
+                
+                // Get file content using Google Drive API for metadata extraction
+                const response = await gapi.client.drive.files.get({
+                    fileId: fileId,
+                    alt: 'media'
                 });
+                
+                // Convert response to blob for metadata extraction
+                const uint8Array = new Uint8Array(response.body.length);
+                for (let i = 0; i < response.body.length; i++) {
+                    uint8Array[i] = response.body.charCodeAt(i);
+                }
+                const blob = new Blob([uint8Array], { type: 'audio/mpeg' });
+                
+                jsmediatags.read(blob, {
+                    onSuccess: (tag) => {
+                        const { title, artist, picture } = tag.tags;
+                        
+                        // Update song info only if metadata is available
+                        if (title) {
+                            this.songTitle.textContent = title;
+                        }
+                        if (artist) {
+                            this.artistName.textContent = artist;
+                        }
+                        
+                        // Handle artist name scrolling
+                        this.setupTextScrolling();
+                        
+                        // Update album art
+                        if (picture) {
+                            const { data, type } = picture;
+                            const byteArray = new Uint8Array(data);
+                            const albumBlob = new Blob([byteArray], { type });
+                            const url = URL.createObjectURL(albumBlob);
+                            this.albumArt.src = url;
+                        }
+                        
+                        resolve();
+                    },
+                    onError: (error) => {
+                        console.warn('Metadata extraction failed, using filename info:', error);
+                        resolve(); // Don't reject, just use filename-based info
+                    }
+                });
+                
+            } catch (error) {
+                console.warn('Could not get file for metadata extraction:', error);
+                resolve(); // Don't reject, just use filename-based info
+            }
         });
     }
 
