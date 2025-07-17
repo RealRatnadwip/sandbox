@@ -12,6 +12,9 @@ class MusicPlayer {
         this.currentBlobUrl = null; // Track current blob URL for cleanup
         this.nextSongData = null; // Pre-loaded next song data
         this.isPreloading = false; // Prevent multiple pre-load attempts
+        this.isShuffleMode = false; // Shuffle mode state
+        this.shuffledPlaylist = []; // Shuffled order of song indices
+        this.shuffleIndex = 0; // Current position in shuffled playlist
         
         this.initializeElements();
         this.setupEventListeners();
@@ -28,6 +31,7 @@ class MusicPlayer {
         this.prevBtn = document.getElementById('prevBtn');
         this.nextBtn = document.getElementById('nextBtn');
         this.muteBtn = document.getElementById('muteBtn');
+        this.shuffleBtn = document.getElementById('shuffleBtn');
         
         // Disable auth button initially
         this.authButton.disabled = true;
@@ -48,6 +52,7 @@ class MusicPlayer {
         this.prevBtn.addEventListener('click', () => this.previousSong());
         this.nextBtn.addEventListener('click', () => this.nextSong());
         this.muteBtn.addEventListener('click', () => this.toggleMute());
+        this.shuffleBtn.addEventListener('click', () => this.toggleShuffle());
         
         this.progressBar.addEventListener('click', (e) => this.seekTo(e));
         
@@ -173,6 +178,7 @@ class MusicPlayer {
             this.hideLoading();
             this.playerContainer.style.display = 'block';
             await this.loadSong(this.currentSongIndex);
+            this.createShuffledPlaylist(); // Create initial shuffle playlist
         } catch (error) {
             this.hideLoading();
             console.error('Failed to load songs:', error);
@@ -197,6 +203,81 @@ class MusicPlayer {
         } catch (error) {
             console.error('Failed to load song IDs:', error);
             throw error;
+        }
+    }
+
+    createShuffledPlaylist() {
+        // Create array of indices [0, 1, 2, ..., songIds.length-1]
+        this.shuffledPlaylist = Array.from({length: this.songIds.length}, (_, i) => i);
+        
+        // Fisher-Yates shuffle algorithm
+        for (let i = this.shuffledPlaylist.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.shuffledPlaylist[i], this.shuffledPlaylist[j]] = [this.shuffledPlaylist[j], this.shuffledPlaylist[i]];
+        }
+        
+        // Set shuffle index to current song position in shuffled playlist
+        this.shuffleIndex = this.shuffledPlaylist.indexOf(this.currentSongIndex);
+        
+        console.log('Shuffled playlist created:', this.shuffledPlaylist);
+    }
+
+    toggleShuffle() {
+        this.isShuffleMode = !this.isShuffleMode;
+        
+        if (this.isShuffleMode) {
+            this.shuffleBtn.innerHTML = '<i class="fas fa-random" style="color: #E0F11F;"></i>';
+            this.shuffleBtn.style.background = 'rgba(224, 241, 31, 0.2)';
+            console.log('Shuffle mode ON');
+            
+            // Create new shuffled playlist if not exists or recreate
+            this.createShuffledPlaylist();
+        } else {
+            this.shuffleBtn.innerHTML = '<i class="fas fa-random"></i>';
+            this.shuffleBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            console.log('Shuffle mode OFF');
+        }
+    }
+
+    getNextSongIndex() {
+        if (this.isShuffleMode) {
+            // In shuffle mode, move to next song in shuffled playlist
+            if (this.shuffleIndex < this.shuffledPlaylist.length - 1) {
+                this.shuffleIndex++;
+                return this.shuffledPlaylist[this.shuffleIndex];
+            } else {
+                // End of shuffled playlist, create new shuffle and start over
+                console.log('End of shuffled playlist, creating new shuffle...');
+                this.createShuffledPlaylist();
+                this.shuffleIndex = 0;
+                return this.shuffledPlaylist[this.shuffleIndex];
+            }
+        } else {
+            // Normal mode, just next song
+            if (this.currentSongIndex < this.songIds.length - 1) {
+                return this.currentSongIndex + 1;
+            } else {
+                return -1; // End of playlist
+            }
+        }
+    }
+
+    getPreviousSongIndex() {
+        if (this.isShuffleMode) {
+            // In shuffle mode, move to previous song in shuffled playlist
+            if (this.shuffleIndex > 0) {
+                this.shuffleIndex--;
+                return this.shuffledPlaylist[this.shuffleIndex];
+            } else {
+                return -1; // Beginning of shuffled playlist
+            }
+        } else {
+            // Normal mode, just previous song
+            if (this.currentSongIndex > 0) {
+                return this.currentSongIndex - 1;
+            } else {
+                return -1; // Beginning of playlist
+            }
         }
     }
 
@@ -331,12 +412,13 @@ class MusicPlayer {
 
     async preloadNextSong() {
         // Don't preload if already preloading or no next song
-        if (this.isPreloading || this.currentSongIndex >= this.songIds.length - 1) {
+        const nextIndex = this.getNextSongIndex();
+        if (this.isPreloading || nextIndex === -1) {
             return;
         }
         
         // Don't preload if next song is already preloaded
-        if (this.nextSongData && this.nextSongData.index === this.currentSongIndex + 1) {
+        if (this.nextSongData && this.nextSongData.index === nextIndex) {
             return;
         }
         
@@ -344,7 +426,6 @@ class MusicPlayer {
         
         try {
             console.log('Pre-loading next song...');
-            const nextIndex = this.currentSongIndex + 1;
             
             // Clean up any existing pre-loaded data
             if (this.nextSongData) {
@@ -423,9 +504,11 @@ class MusicPlayer {
 
     async handleSongEnd() {
         console.log('Song ended, auto-playing next song...');
-        if (this.currentSongIndex < this.songIds.length - 1) {
-            this.currentSongIndex++;
-            await this.loadSong(this.currentSongIndex);
+        
+        const nextIndex = this.getNextSongIndex();
+        if (nextIndex !== -1) {
+            this.currentSongIndex = nextIndex;
+            await this.loadSong(nextIndex);
             // Auto-play the next song
             setTimeout(() => {
                 this.audioPlayer.play().then(() => {
@@ -438,7 +521,7 @@ class MusicPlayer {
                 });
             }, 500); // Small delay to ensure audio is loaded
         } else {
-            console.log('Reached end of playlist');
+            console.log('Reached end of playlist/shuffle');
             this.isPlaying = false;
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
         }
@@ -456,15 +539,16 @@ class MusicPlayer {
     }
 
     async previousSong() {
-        if (this.currentSongIndex > 0) {
+        const prevIndex = this.getPreviousSongIndex();
+        if (prevIndex !== -1) {
             // Clean up pre-loaded data since we're going backwards
             if (this.nextSongData) {
                 URL.revokeObjectURL(this.nextSongData.audioUrl);
                 this.nextSongData = null;
             }
             
-            this.currentSongIndex--;
-            await this.loadSong(this.currentSongIndex);
+            this.currentSongIndex = prevIndex;
+            await this.loadSong(prevIndex);
             // Reset play state when manually skipping
             this.isPlaying = false;
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -472,9 +556,10 @@ class MusicPlayer {
     }
 
     async nextSong() {
-        if (this.currentSongIndex < this.songIds.length - 1) {
-            this.currentSongIndex++;
-            await this.loadSong(this.currentSongIndex);
+        const nextIndex = this.getNextSongIndex();
+        if (nextIndex !== -1) {
+            this.currentSongIndex = nextIndex;
+            await this.loadSong(nextIndex);
             // Reset play state when manually skipping
             this.isPlaying = false;
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
