@@ -201,6 +201,7 @@ class MusicPlayer {
         if (index < 0 || index >= this.songIds.length) return;
         
         this.showLoading();
+        this.albumArtLoaded = false; // Reset album art flag
         
         try {
             const fileId = this.songIds[index];
@@ -282,8 +283,10 @@ class MusicPlayer {
             // Handle artist name scrolling
             this.setupTextScrolling();
             
-            // Set default album art
-            this.albumArt.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik0xMDAgNTBMMTUwIDEwMEwxMDAgMTUwTDUwIDEwMEwxMDAgNTBaIiBmaWxsPSIjRTBGMTFGIi8+Cjwvc3ZnPg==";
+            // Set default album art only if no album art was loaded from metadata
+            if (!this.albumArtLoaded) {
+                this.albumArt.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik0xMDAgNTBMMTUwIDEwMEwxMDAgMTUwTDUwIDEwMEwxMDAgNTBaIiBmaWxsPSIjRTBGMTFGIi8+Cjwvc3ZnPg==";
+            }
             
         } catch (error) {
             console.error('Failed to get file metadata:', error);
@@ -321,6 +324,7 @@ class MusicPlayer {
                         const albumBlob = new Blob([byteArray], { type });
                         const url = URL.createObjectURL(albumBlob);
                         this.albumArt.src = url;
+                        this.albumArtLoaded = true; // Mark album art as loaded
                     }
                     
                     resolve();
