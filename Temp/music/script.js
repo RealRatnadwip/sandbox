@@ -18,6 +18,7 @@ class MusicPlayer {
         
         this.initializeElements();
         this.setupEventListeners();
+        this.setupKeyboardControls();
         this.initializeGoogleAPI();
     }
 
@@ -60,6 +61,48 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
         this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
+        
+        // Media session API for multimedia keys
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', () => {
+                if (!this.isPlaying) this.togglePlayPause();
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+                if (this.isPlaying) this.togglePlayPause();
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', () => this.previousSong());
+            navigator.mediaSession.setActionHandler('nexttrack', () => this.nextSong());
+        }
+    }
+
+    setupKeyboardControls() {
+        document.addEventListener('keydown', (e) => {
+            // Prevent default behavior if target is not an input field
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                switch(e.code) {
+                    case 'Space':
+                        e.preventDefault();
+                        this.togglePlayPause();
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        this.previousSong();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        this.nextSong();
+                        break;
+                    case 'KeyM':
+                        e.preventDefault();
+                        this.toggleMute();
+                        break;
+                    case 'KeyS':
+                        e.preventDefault();
+                        this.toggleShuffle();
+                        break;
+                }
+            }
+        });
     }
 
     async initializeGoogleAPI() {
@@ -373,6 +416,9 @@ class MusicPlayer {
                 this.albumArt.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik0xMDAgNTBMMTUwIDEwMEwxMDAgMTUwTDUwIDEwMEwxMDAgNTBaIiBmaWxsPSIjRTBGMTFGIi8+Cjwvc3ZnPg==";
             }
             
+            // Update media session
+            this.updateMediaSession();
+            
         } catch (error) {
             console.error('Failed to get file metadata:', error);
             this.songTitle.textContent = 'Unknown Title';
@@ -536,34 +582,6 @@ class MusicPlayer {
             this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
         this.isPlaying = !this.isPlaying;
-    }
-
-    async previousSong() {
-        const prevIndex = this.getPreviousSongIndex();
-        if (prevIndex !== -1) {
-            // Clean up pre-loaded data since we're going backwards
-            if (this.nextSongData) {
-                URL.revokeObjectURL(this.nextSongData.audioUrl);
-                this.nextSongData = null;
-            }
-            
-            this.currentSongIndex = prevIndex;
-            await this.loadSong(prevIndex);
-            // Reset play state when manually skipping
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        }
-    }
-
-    async nextSong() {
-        const nextIndex = this.getNextSongIndex();
-        if (nextIndex !== -1) {
-            this.currentSongIndex = nextIndex;
-            await this.loadSong(nextIndex);
-            // Reset play state when manually skipping
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        }
     }
 
     toggleMute() {
