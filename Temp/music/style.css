@@ -179,7 +179,7 @@ body::-webkit-scrollbar {
     gap: 15px;
     margin-bottom: 30px;
     flex-wrap: nowrap;
-    overflow-x: hidden;
+    overflow: visible;
     padding: 0 10px;
 }
 
@@ -357,7 +357,7 @@ body::-webkit-scrollbar {
     }
     
     .controls {
-        gap: 10px;
+        gap: 7px;
     }
     
     .control-btn {
