@@ -562,12 +562,35 @@ class MusicPlayer {
     }
 
     async handleSongEnd() {
-        console.log('Song ended, auto-playing next song...');
+        if (this.isShuffleMode) {
+            // Move to next position in shuffled playlist
+            this.shuffleIndex++;
+            if (this.shuffleIndex < this.shuffledPlaylist.length) {
+                this.currentSongIndex = this.shuffledPlaylist[this.shuffleIndex];
+                await this.loadSong(this.currentSongIndex);
+            } else {
+                // End of shuffled playlist, create new shuffle and continue
+                console.log('End of shuffled playlist, creating new shuffle and continuing');
+                this.createShuffledPlaylist();
+                this.shuffleIndex = 0;
+                this.currentSongIndex = this.shuffledPlaylist[0];
+                await this.loadSong(this.currentSongIndex);
+            }
+        } else {
+            // Normal mode
+            if (this.currentSongIndex < this.songIds.length - 1) {
+                this.currentSongIndex++;
+                await this.loadSong(this.currentSongIndex);
+            } else {
+                console.log('Reached end of playlist');
+                this.isPlaying = false;
+                this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                return; // Don't try to auto-play
+            }
+        }
         
-        const nextIndex = this.getNextSongIndex();
-        if (nextIndex !== -1) {
-            this.currentSongIndex = nextIndex;
-            await this.loadSong(nextIndex);
+        // Auto-play the next song
+        setTimeout(() => {
             // Auto-play the next song
             setTimeout(() => {
                 this.audioPlayer.play().then(() => {
@@ -579,11 +602,41 @@ class MusicPlayer {
                     // Browser blocked auto-play, user needs to manually play
                 });
             }, 500); // Small delay to ensure audio is loaded
-        } else {
-            console.log('Reached end of playlist/shuffle');
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+        }, 500);
+    }
+
+    async nextSong() {
+        const nextIndex = this.getNextSongIndex();
+        if (nextIndex === -1) {
+            console.log('No next song available');
+            return;
         }
+        
+        if (this.isShuffleMode) {
+            this.shuffleIndex++;
+            this.currentSongIndex = this.shuffledPlaylist[this.shuffleIndex];
+        } else {
+            this.currentSongIndex = nextIndex;
+        }
+        
+        await this.loadSong(this.currentSongIndex);
+    }
+
+    async previousSong() {
+        const prevIndex = this.getPreviousSongIndex();
+        if (prevIndex === -1) {
+            console.log('No previous song available');
+            return;
+        }
+        
+        if (this.isShuffleMode) {
+            this.shuffleIndex--;
+            this.currentSongIndex = this.shuffledPlaylist[this.shuffleIndex];
+        } else {
+            this.currentSongIndex = prevIndex;
+        }
+        
+        await this.loadSong(this.currentSongIndex);
     }
 
     togglePlayPause() {
