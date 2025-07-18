@@ -146,7 +146,7 @@ class MusicPlayer {
 
             // Initialize Google Identity Services
             this.tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb.apps.googleusercontent.com', // Replace with your full client ID
+                client_id: '652948871244-mcv01l9rj8vfpj74he0obhq0uoa8tejb.apps.googleusercontent.com',
                 scope: 'https://www.googleapis.com/auth/drive.readonly',
                 callback: (response) => {
                     if (response.error) {
@@ -237,27 +237,115 @@ class MusicPlayer {
         } catch (error) {
             this.hideLoading();
             console.error('Failed to load songs:', error);
-            alert('Failed to load songs. Please check your CSV file and try again.');
+            
+            // Show user-friendly error message
+            const errorMessage = error.message.includes('❌') ? error.message : 
+                `❌ Failed to Load Songs\n\n${error.message}\n\nPlease check your setup and try again.`;
+            
+            alert(errorMessage);
+            
+            // Show auth section again so user can retry
+            this.authSection.style.display = 'block';
+            this.playerContainer.style.display = 'none';
         }
     }
 
     async loadSongIds() {
         try {
-            const response = await fetch('songs.csv');
-            const csvText = await response.text();
+            console.log('Loading song IDs from Google Drive...');
+            
+            // Step 1: Find the "rMusic" folder
+            const folderResponse = await gapi.client.drive.files.list({
+                q: "name='rMusic' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+                fields: 'files(id, name)'
+            });
+            
+            if (!folderResponse.result.files || folderResponse.result.files.length === 0) {
+                throw new Error('FOLDER_NOT_FOUND');
+            }
+            
+            const folderId = folderResponse.result.files[0].id;
+            console.log('Found rMusic folder:', folderId);
+            
+            // Step 2: Find the "rSongList.csv" file in the folder
+            const fileResponse = await gapi.client.drive.files.list({
+                q: `name='rSongList.csv' and parents in '${folderId}' and trashed=false`,
+                fields: 'files(id, name)'
+            });
+            
+            if (!fileResponse.result.files || fileResponse.result.files.length === 0) {
+                throw new Error('CSV_NOT_FOUND');
+            }
+            
+            const csvFileId = fileResponse.result.files[0].id;
+            console.log('Found rSongList.csv file:', csvFileId);
+            
+            // Step 3: Download the CSV content
+            const csvResponse = await gapi.client.drive.files.get({
+                fileId: csvFileId,
+                alt: 'media'
+            });
+            
+            const csvText = csvResponse.body;
+            console.log('Downloaded CSV content, length:', csvText.length);
             
             this.songIds = csvText.split('\n')
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
             
             if (this.songIds.length === 0) {
-                throw new Error('No song IDs found in CSV file');
+                throw new Error('EMPTY_CSV');
             }
             
             console.log(`Loaded ${this.songIds.length} song IDs`);
         } catch (error) {
             console.error('Failed to load song IDs:', error);
-            throw error;
+            
+            // Handle specific errors with user-friendly messages
+            if (error.message === 'FOLDER_NOT_FOUND') {
+                throw new Error(`
+❌ Folder Setup Required
+
+Please create a folder named "rMusic" in your Google Drive root directory.
+
+Steps:
+1. Go to drive.google.com
+2. Click "New" → "Folder"
+3. Name it exactly: rMusic
+4. Refresh this page and try again
+                `);
+            } else if (error.message === 'CSV_NOT_FOUND') {
+                throw new Error(`
+❌ CSV File Missing
+
+Please create "rSongList.csv" file inside your "rMusic" folder.
+
+Steps:
+1. Go to your "rMusic" folder in Google Drive
+2. Click "New" → "Google Sheets"
+3. Add your song file IDs (one per row)
+4. Download as CSV and upload as "rSongList.csv"
+5. Refresh this page and try again
+
+Example CSV content:
+1abc2def3ghi4jkl5mno6pqr7stu8vwx9yz0
+2def3ghi4jkl5mno6pqr7stu8vwx9yz01abc
+                `);
+            } else if (error.message === 'EMPTY_CSV') {
+                throw new Error(`
+❌ Empty Playlist
+
+Your "rSongList.csv" file is empty.
+
+Please add Google Drive file IDs to your CSV file:
+1. Open "rSongList.csv" in your "rMusic" folder
+2. Add one file ID per line
+3. Save the file
+4. Refresh this page and try again
+                `);
+            } else {
+                throw new Error(`Failed to load playlist: ${error.message}`);
+            }
         }
     }
 
