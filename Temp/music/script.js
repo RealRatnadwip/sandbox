@@ -22,6 +22,18 @@ class MusicPlayer {
         this.initializeGoogleAPI();
     }
 
+    updateMediaSession() {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: this.songTitle.textContent || 'Unknown Title',
+                artist: this.artistName.textContent || 'Unknown Artist',
+                artwork: [
+                    { src: this.albumArt.src, sizes: '200x200', type: 'image/jpeg' }
+                ]
+            });
+        }
+    }
+
     initializeElements() {
         this.authSection = document.getElementById('authSection');
         this.playerContainer = document.getElementById('playerContainer');
@@ -285,15 +297,11 @@ class MusicPlayer {
     getNextSongIndex() {
         if (this.isShuffleMode) {
             // In shuffle mode, move to next song in shuffled playlist
-            if (this.shuffleIndex < this.shuffledPlaylist.length - 1) {
-                this.shuffleIndex++;
-                return this.shuffledPlaylist[this.shuffleIndex];
+            const nextShuffleIndex = this.shuffleIndex + 1;
+            if (nextShuffleIndex < this.shuffledPlaylist.length) {
+                return this.shuffledPlaylist[nextShuffleIndex];
             } else {
-                // End of shuffled playlist, create new shuffle and start over
-                console.log('End of shuffled playlist, creating new shuffle...');
-                this.createShuffledPlaylist();
-                this.shuffleIndex = 0;
-                return this.shuffledPlaylist[this.shuffleIndex];
+                return -1; // End of shuffled playlist
             }
         } else {
             // Normal mode, just next song
@@ -308,9 +316,9 @@ class MusicPlayer {
     getPreviousSongIndex() {
         if (this.isShuffleMode) {
             // In shuffle mode, move to previous song in shuffled playlist
-            if (this.shuffleIndex > 0) {
-                this.shuffleIndex--;
-                return this.shuffledPlaylist[this.shuffleIndex];
+            const prevShuffleIndex = this.shuffleIndex - 1;
+            if (prevShuffleIndex >= 0) {
+                return this.shuffledPlaylist[prevShuffleIndex];
             } else {
                 return -1; // Beginning of shuffled playlist
             }
@@ -418,6 +426,11 @@ class MusicPlayer {
             
             // Update media session
             this.updateMediaSession();
+            
+            console.log('Song info updated:', {
+                title: this.songTitle.textContent,
+                artist: this.artistName.textContent
+            });
             
         } catch (error) {
             console.error('Failed to get file metadata:', error);
