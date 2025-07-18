@@ -165,7 +165,7 @@ class MusicPlayer {
             
             // Enable the auth button
             this.authButton.disabled = false;
-            this.authButton.textContent = 'Sign in with Google';
+            this.authButton.innerHTML = 'Sign in with Google<i class="fab fa-google auth-btn-google-icon"></i>';
             
         } catch (error) {
             console.error('Failed to initialize Google API:', error);
