@@ -18,6 +18,7 @@ class MusicPlayer {
         this.endDetectionInterval = null; // For detecting song end when locked
         this.lastKnownTime = 0; // Track playback position
         this.stuckTimeCount = 0; // Count how long time has been stuck
+        this.mediaSessionInitialized = false;
         
         this.initializeElements();
         this.setupEventListeners();
@@ -26,33 +27,35 @@ class MusicPlayer {
     }
 
     updateMediaSession() {
-        if ('mediaSession' in navigator) {
-            // Ensure we have valid metadata before setting
-            const title = this.songTitle.textContent || 'Unknown Title';
-            const artist = this.artistName.textContent || 'Unknown Artist';
-            const artwork = this.albumArt.src || '';
-            
-            navigator.mediaSession.metadata = new MediaMetadata({
-                title: title,
-                artist: artist,
-                artwork: [
-                    { src: artwork, sizes: '96x96', type: 'image/jpeg' },
-                    { src: artwork, sizes: '128x128', type: 'image/jpeg' },
-                    { src: artwork, sizes: '192x192', type: 'image/jpeg' },
-                    { src: artwork, sizes: '256x256', type: 'image/jpeg' },
-                    { src: artwork, sizes: '384x384', type: 'image/jpeg' },
-                    { src: artwork, sizes: '512x512', type: 'image/jpeg' }
-                ]
-            });
-            
-            // Update playback state
-            navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
-            
-            // Update position state with a small delay to ensure audio is ready
-            setTimeout(() => {
-                this.updateMediaSessionPosition();
-            }, 100);
-        }
+       if ('mediaSession' in navigator) {
+           // Ensure we have valid metadata before setting
+           const title = this.songTitle.textContent || 'Unknown Title';
+           const artist = this.artistName.textContent || 'Unknown Artist';
+           const artwork = this.albumArt.src || '';
+           
+           // Always set metadata, even if empty
+           navigator.mediaSession.metadata = new MediaMetadata({
+               title: title,
+               artist: artist,
+               album: '', // Add empty album field
+               artwork: artwork ? [
+                   { src: artwork, sizes: '96x96', type: 'image/jpeg' },
+                   { src: artwork, sizes: '128x128', type: 'image/jpeg' },
+                   { src: artwork, sizes: '192x192', type: 'image/jpeg' },
+                   { src: artwork, sizes: '256x256', type: 'image/jpeg' },
+                   { src: artwork, sizes: '384x384', type: 'image/jpeg' },
+                   { src: artwork, sizes: '512x512', type: 'image/jpeg' }
+               ] : []
+           });
+           
+           // Update playback state - this is crucial for mobile
+           navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
+           
+           // Update position state immediately if audio is ready
+           if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration) && this.audioPlayer.duration > 0) {
+               this.updateMediaSessionPosition();
+           }
+       }
     }
 
     updateMediaSessionPosition() {
@@ -70,15 +73,19 @@ class MusicPlayer {
     handleVisibilityChange() {
         if (document.hidden) {
             console.log('Page hidden - background mode');
-            // Don't interfere with audio playback, let it continue naturally
+            // Ensure media session is active for background controls
+            if (this.isPlaying) {
+                this.updateMediaSession();
+            }
         } else {
             console.log('Page visible - foreground mode');
-            // Check if playback state is consistent
-            if (this.isPlaying && this.audioPlayer.paused) {
-                console.log('Resuming playback after returning to foreground');
-                this.audioPlayer.play().catch(error => {
-                    console.warn('Could not resume playback:', error);
-                });
+            // Sync UI state with actual audio state
+            const actuallyPlaying = !this.audioPlayer.paused && this.audioPlayer.currentTime > 0;
+            if (this.isPlaying !== actuallyPlaying) {
+                console.log('Syncing play state:', actuallyPlaying);
+                this.isPlaying = actuallyPlaying;
+                this.playPauseBtn.innerHTML = this.isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                this.updateMediaSession();
             }
         }
     }
@@ -160,10 +167,14 @@ class MusicPlayer {
         });
         this.audioPlayer.addEventListener('playing', () => {
             console.log('Audio started playing');
+            this.isPlaying = true;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
             this.updateMediaSession();
         });
         this.audioPlayer.addEventListener('pause', () => {
             console.log('Audio paused');
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
             this.updateMediaSession();
         });
         this.audioPlayer.addEventListener('stalled', () => {
@@ -187,30 +198,57 @@ class MusicPlayer {
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
                 console.log('Media session: play action');
-                if (!this.isPlaying) {
+                if (!this.isPlaying && !this.audioPlayer.paused) {
+                    // Audio is ready to play
+                    this.audioPlayer.play().then(() => {
+                        this.isPlaying = true;
+                        this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        this.updateMediaSession();
+                    }).catch(error => {
+                        console.error('Media session play failed:', error);
+                    });
+                } else if (!this.isPlaying && this.audioPlayer.paused) {
+                    // Audio is paused, resume it
                     this.togglePlayPause();
                 }
             });
+
             navigator.mediaSession.setActionHandler('pause', () => {
                 console.log('Media session: pause action');
-                if (this.isPlaying) {
+                if (this.isPlaying && !this.audioPlayer.paused) {
                     this.togglePlayPause();
                 }
             });
+
             navigator.mediaSession.setActionHandler('previoustrack', () => {
                 console.log('Media session: previous track');
                 this.previousSong();
             });
+
             navigator.mediaSession.setActionHandler('nexttrack', () => {
                 console.log('Media session: next track');
                 this.nextSong();
             });
+
             navigator.mediaSession.setActionHandler('seekto', (details) => {
                 console.log('Media session: seek to', details.seekTime);
                 if (details.seekTime && this.audioPlayer.duration) {
                     this.audioPlayer.currentTime = details.seekTime;
                     this.updateMediaSessionPosition();
                 }
+            });
+
+            // Add these additional handlers for better mobile support
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                const skipTime = details.seekOffset || 10;
+                this.audioPlayer.currentTime = Math.max(0, this.audioPlayer.currentTime - skipTime);
+                this.updateMediaSessionPosition();
+            });
+
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                const skipTime = details.seekOffset || 10;
+                this.audioPlayer.currentTime = Math.min(this.audioPlayer.duration, this.audioPlayer.currentTime + skipTime);
+                this.updateMediaSessionPosition();
             });
         }
     }
@@ -299,6 +337,113 @@ class MusicPlayer {
             console.error('Failed to initialize Google API:', error);
             alert('Failed to initialize Google API. Please check your setup and try refreshing the page.');
             this.authButton.textContent = 'Initialization Failed - Refresh Page';
+        }
+    }
+
+    initializeMediaSessionForSong() {
+        if ('mediaSession' in navigator) {
+            // Set initial metadata
+            this.updateMediaSession();
+
+            // Set up action handlers if not already done
+            if (!this.mediaSessionInitialized) {
+                this.setupMediaSessionHandlers();
+                this.mediaSessionInitialized = true;
+            }
+        }
+    }
+
+    setupMediaSessionHandlers() {
+        if ('mediaSession' in navigator) {
+            // Set all action handlers
+            const handlers = {
+                play: () => {
+                    console.log('Media session: play');
+                    if (!this.isPlaying) this.togglePlayPause();
+                },
+                pause: () => {
+                    console.log('Media session: pause');
+                    if (this.isPlaying) this.togglePlayPause();
+                },
+                previoustrack: () => {
+                    console.log('Media session: previous');
+                    this.previousSong();
+                },
+                nexttrack: () => {
+                    console.log('Media session: next');
+                    this.nextSong();
+                },
+                seekto: (details) => {
+                    if (details.seekTime && this.audioPlayer.duration) {
+                        this.audioPlayer.currentTime = details.seekTime;
+                        this.updateMediaSessionPosition();
+                    }
+                },
+                seekbackward: (details) => {
+                    const skipTime = details.seekOffset || 10;
+                    this.audioPlayer.currentTime = Math.max(0, this.audioPlayer.currentTime - skipTime);
+                    this.updateMediaSessionPosition();
+                },
+                seekforward: (details) => {
+                    const skipTime = details.seekOffset || 10;
+                    this.audioPlayer.currentTime = Math.min(this.audioPlayer.duration, this.audioPlayer.currentTime + skipTime);
+                    this.updateMediaSessionPosition();
+                }
+            };
+
+            // Set all handlers
+            for (const [action, handler] of Object.entries(handlers)) {
+                try {
+                    navigator.mediaSession.setActionHandler(action, handler);
+                } catch (error) {
+                    console.warn(`Media session action ${action} not supported:`, error);
+                }
+            }
+        }
+    }
+
+    setupEndDetection() {
+        // Clear any existing interval
+        if (this.endDetectionInterval) {
+            clearInterval(this.endDetectionInterval);
+        }
+
+        // Only set up if audio is playing
+        if (this.isPlaying && !this.audioPlayer.paused) {
+            this.endDetectionInterval = setInterval(() => {
+                this.checkIfSongShouldEnd();
+            }, 1000);
+        }
+    }
+
+    checkIfSongShouldEnd() {
+        if (!this.isPlaying || this.audioPlayer.paused) {
+            if (this.endDetectionInterval) {
+                clearInterval(this.endDetectionInterval);
+                this.endDetectionInterval = null;
+            }
+            return;
+        }
+
+        const currentTime = this.audioPlayer.currentTime;
+        const duration = this.audioPlayer.duration;
+
+        // Check if time is stuck (hasn't changed)
+        if (Math.abs(currentTime - this.lastKnownTime) < 0.1) {
+            this.stuckTimeCount++;
+
+            // If time has been stuck for 3+ seconds and we're near the end
+            if (this.stuckTimeCount >= 3 && duration && currentTime >= duration - 1) {
+                console.log('Detected stuck audio near end, triggering song end');
+                if (this.endDetectionInterval) {
+                    clearInterval(this.endDetectionInterval);
+                    this.endDetectionInterval = null;
+                }
+                this.handleSongEnd();
+            }
+        } else {
+            this.lastKnownTime = currentTime;
+            this.stuckTimeCount = 0;
         }
     }
 
@@ -584,6 +729,7 @@ Please add Google Drive file IDs to your CSV file:
             await this.getFileMetadata(songData.fileId);
             
             this.hideLoading();
+            this.initializeMediaSessionForSong();
             
         } catch (error) {
             console.error('Failed to load song:', error);
@@ -607,47 +753,63 @@ Please add Google Drive file IDs to your CSV file:
                 fileId: fileId,
                 fields: 'name,mimeType'
             });
-            
+
             const fileName = response.result.name;
-            
+
             // Extract title and artist from filename if possible
             let title = 'Unknown Title';
             let artist = 'Unknown Artist';
-            
+
             if (fileName) {
                 // Remove file extension
                 const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
-                
-                // Try to parse "Artist - Title" format
+
+                // Try to parse different formats, being more flexible with non-Latin text
                 if (nameWithoutExt.includes(' - ')) {
                     const parts = nameWithoutExt.split(' - ');
                     artist = parts[0].trim();
                     title = parts.slice(1).join(' - ').trim();
+                } else if (nameWithoutExt.includes(' – ')) { // em dash
+                    const parts = nameWithoutExt.split(' – ');
+                    artist = parts[0].trim();
+                    title = parts.slice(1).join(' – ').trim();
+                } else if (nameWithoutExt.includes('—')) { // em dash without spaces
+                    const parts = nameWithoutExt.split('—');
+                    artist = parts[0].trim();
+                    title = parts.slice(1).join('—').trim();
                 } else {
                     title = nameWithoutExt;
                 }
+
+                // Fallback: if title or artist is empty, use filename
+                if (!title || title.trim() === '') {
+                    title = nameWithoutExt;
+                }
+                if (!artist || artist.trim() === '') {
+                    artist = 'Unknown Artist';
+                }
             }
-            
+
             // Update song info
             this.songTitle.textContent = title;
             this.artistName.textContent = artist;
-            
+
             // Handle artist name scrolling
             this.setupTextScrolling();
-            
+
             // Set default album art only if no album art was loaded from metadata
             if (!this.albumArtLoaded) {
                 this.albumArt.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik0xMDAgNTBMMTUwIDEwMEwxMDAgMTUwTDUwIDEwMEwxMDAgNTBaIiBmaWxsPSIjRTBGMTFGIi8+Cjwvc3ZnPg==";
             }
-            
+
             // Update media session
             this.updateMediaSession();
-            
+
             console.log('Song info updated:', {
                 title: this.songTitle.textContent,
                 artist: this.artistName.textContent
             });
-            
+
         } catch (error) {
             console.error('Failed to get file metadata:', error);
             this.songTitle.textContent = 'Unknown Title';
@@ -722,23 +884,26 @@ Please add Google Drive file IDs to your CSV file:
     async extractMetadataFromBlob(blob) {
         return new Promise((resolve, reject) => {
             console.log('Extracting metadata from blob:', blob.size, 'bytes');
-            
+
             jsmediatags.read(blob, {
                 onSuccess: (tag) => {
                     console.log('Metadata extraction successful:', tag.tags);
                     const { title, artist, picture } = tag.tags;
-                    
-                    // Update song info only if metadata is available and better than filename
-                    if (title && title.trim()) {
-                        this.songTitle.textContent = title;
+
+                    // Update song info only if metadata is available and not empty
+                    // Be more lenient with text validation for non-Latin languages
+                    if (title && typeof title === 'string' && title.trim().length > 0) {
+                        this.songTitle.textContent = title.trim();
+                        console.log('Using metadata title:', title);
                     }
-                    if (artist && artist.trim()) {
-                        this.artistName.textContent = artist;
+                    if (artist && typeof artist === 'string' && artist.trim().length > 0) {
+                        this.artistName.textContent = artist.trim();
+                        console.log('Using metadata artist:', artist);
                     }
-                    
+
                     // Handle artist name scrolling
                     this.setupTextScrolling();
-                    
+
                     // Update album art
                     if (picture) {
                         console.log('Album art found in metadata');
@@ -749,7 +914,7 @@ Please add Google Drive file IDs to your CSV file:
                         this.albumArt.src = url;
                         this.albumArtLoaded = true; // Mark album art as loaded
                     }
-                    
+
                     resolve();
                 },
                 onError: (error) => {
@@ -780,7 +945,7 @@ Please add Google Drive file IDs to your CSV file:
     async handleSongEnd() {
         console.log('Song ended, preparing next song...');
         const wasPlaying = this.isPlaying;
-        
+
         if (this.isShuffleMode) {
             // Move to next position in shuffled playlist
             this.shuffleIndex++;
@@ -808,41 +973,39 @@ Please add Google Drive file IDs to your CSV file:
                 return; // Don't try to auto-play
             }
         }
-        
+
         // Auto-play the next song if it was playing before
         if (wasPlaying) {
             console.log('Auto-playing next song...');
-            
-            // Set up end detection for the new song
-            this.setupEndDetection();
-            
-            // Use a more reliable approach for auto-play
-            const playPromise = this.audioPlayer.play();
-            
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
+
+            // More reliable auto-play approach for mobile
+            this.isPlaying = true;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            this.updateMediaSession();
+
+            // Try to play with better mobile support
+            const playNext = async () => {
+                try {
+                    // Wait a bit for the audio to be ready
+                    await new Promise(resolve => {
+                        if (this.audioPlayer.readyState >= 2) {
+                            resolve();
+                        } else {
+                            this.audioPlayer.addEventListener('canplay', resolve, { once: true });
+                            // Fallback timeout
+                            setTimeout(resolve, 1000);
+                        }
+                    });
+
+                    await this.audioPlayer.play();
                     console.log('Next song auto-play successful');
-                    this.isPlaying = true;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    this.updateMediaSession();
-                }).catch(error => {
-                    console.warn('Auto-play failed:', error);
-                    // Try again after a short delay
-                    setTimeout(() => {
-                        this.audioPlayer.play().then(() => {
-                            console.log('Delayed auto-play successful');
-                            this.isPlaying = true;
-                            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                            this.updateMediaSession();
-                        }).catch(err => {
-                            console.log('Auto-play blocked by browser policy');
-                            this.isPlaying = false;
-                            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                            this.updateMediaSession();
-                        });
-                    }, 1000);
-                });
-            }
+                } catch (error) {
+                    console.warn('Auto-play failed, likely due to browser policy:', error);
+                    // Don't change UI state - keep it as "playing" so user can manually resume
+                }
+            };
+
+            playNext();
         } else {
             // Song ended but was paused, keep in paused state
             this.isPlaying = false;
@@ -850,7 +1013,6 @@ Please add Google Drive file IDs to your CSV file:
             this.updateMediaSession();
         }
     }
-
     async nextSong() {
         const wasPlaying = this.isPlaying;
         
@@ -939,11 +1101,26 @@ Please add Google Drive file IDs to your CSV file:
         if (this.isPlaying) {
             this.audioPlayer.pause();
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            this.isPlaying = false;
         } else {
-            this.audioPlayer.play();
-            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            const playPromise = this.audioPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    this.isPlaying = true;
+                    this.updateMediaSession();
+                }).catch(error => {
+                    console.error('Play failed:', error);
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    this.isPlaying = false;
+                });
+            } else {
+                this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                this.isPlaying = true;
+            }
         }
-        this.isPlaying = !this.isPlaying;
+
+        // Always update media session after state change
         this.updateMediaSession();
     }
 
