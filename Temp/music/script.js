@@ -15,6 +15,9 @@ class MusicPlayer {
         this.isShuffleMode = false; // Shuffle mode state
         this.shuffledPlaylist = []; // Shuffled order of song indices
         this.shuffleIndex = 0; // Current position in shuffled playlist
+        this.endDetectionInterval = null; // For detecting song end when locked
+        this.lastKnownTime = 0; // Track playback position
+        this.stuckTimeCount = 0; // Count how long time has been stuck
         
         this.initializeElements();
         this.setupEventListeners();
@@ -144,6 +147,7 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('loadedmetadata', () => this.updateDuration());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
         this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
+        this.audioPlayer.addEventListener('ended', () => this.handleSongEndBackup());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
         
         // Add more audio event listeners for better background support
@@ -161,6 +165,14 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('pause', () => {
             console.log('Audio paused');
             this.updateMediaSession();
+        });
+        this.audioPlayer.addEventListener('stalled', () => {
+            console.log('Audio stalled - checking if song ended');
+            this.checkIfSongShouldEnd();
+        });
+        this.audioPlayer.addEventListener('suspend', () => {
+            console.log('Audio suspended - setting up end detection');
+            this.setupEndDetection();
         });
         
         // Add visibility change listener for background playback
@@ -281,7 +293,7 @@ class MusicPlayer {
             
             // Enable the auth button
             this.authButton.disabled = false;
-            this.authButton.textContent = 'Sign in with Google';
+            this.authButton.innerHTML = 'Sign in with Google<i class="fab fa-google auth-btn-google-icon"></i>';
             
         } catch (error) {
             console.error('Failed to initialize Google API:', error);
@@ -800,6 +812,10 @@ Please add Google Drive file IDs to your CSV file:
         // Auto-play the next song if it was playing before
         if (wasPlaying) {
             console.log('Auto-playing next song...');
+            
+            // Set up end detection for the new song
+            this.setupEndDetection();
+            
             // Use a more reliable approach for auto-play
             const playPromise = this.audioPlayer.play();
             
@@ -957,6 +973,10 @@ Please add Google Drive file IDs to your CSV file:
             const progressPercent = (currentTime / duration) * 100;
             this.progressFill.style.width = `${progressPercent}%`;
             this.currentTime.textContent = this.formatTime(currentTime);
+            
+            // Track time for end detection
+            this.lastKnownTime = currentTime;
+            this.stuckTimeCount = 0; // Reset stuck counter when time updates
             
             // Update media session position more frequently for better sync
             if (Math.floor(currentTime * 2) % 2 === 0) { // Every 0.5 seconds
