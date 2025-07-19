@@ -24,25 +24,37 @@ class MusicPlayer {
 
     updateMediaSession() {
         if ('mediaSession' in navigator) {
+            // Ensure we have valid metadata before setting
+            const title = this.songTitle.textContent || 'Unknown Title';
+            const artist = this.artistName.textContent || 'Unknown Artist';
+            const artwork = this.albumArt.src || '';
+            
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: this.songTitle.textContent || 'Unknown Title',
-                artist: this.artistName.textContent || 'Unknown Artist',
+                title: title,
+                artist: artist,
                 artwork: [
-                    { src: this.albumArt.src, sizes: '200x200', type: 'image/jpeg' }
+                    { src: artwork, sizes: '96x96', type: 'image/jpeg' },
+                    { src: artwork, sizes: '128x128', type: 'image/jpeg' },
+                    { src: artwork, sizes: '192x192', type: 'image/jpeg' },
+                    { src: artwork, sizes: '256x256', type: 'image/jpeg' },
+                    { src: artwork, sizes: '384x384', type: 'image/jpeg' },
+                    { src: artwork, sizes: '512x512', type: 'image/jpeg' }
                 ]
             });
             
             // Update playback state
             navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
             
-            // Update position state
-            this.updateMediaSessionPosition();
+            // Update position state with a small delay to ensure audio is ready
+            setTimeout(() => {
+                this.updateMediaSessionPosition();
+            }, 100);
         }
     }
 
     updateMediaSessionPosition() {
         if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-            if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration)) {
+            if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration) && this.audioPlayer.duration > 0) {
                 navigator.mediaSession.setPositionState({
                     duration: this.audioPlayer.duration,
                     playbackRate: this.audioPlayer.playbackRate,
@@ -53,13 +65,18 @@ class MusicPlayer {
     }
 
     handleVisibilityChange() {
-        // Keep audio context active when page becomes hidden
-        if (document.hidden && this.isPlaying) {
-            console.log('Page hidden, maintaining audio playback');
-            // Ensure audio continues playing in background
-            this.audioPlayer.play().catch(error => {
-                console.warn('Background playback may be restricted:', error);
-            });
+        if (document.hidden) {
+            console.log('Page hidden - background mode');
+            // Don't interfere with audio playback, let it continue naturally
+        } else {
+            console.log('Page visible - foreground mode');
+            // Check if playback state is consistent
+            if (this.isPlaying && this.audioPlayer.paused) {
+                console.log('Resuming playback after returning to foreground');
+                this.audioPlayer.play().catch(error => {
+                    console.warn('Could not resume playback:', error);
+                });
+            }
         }
     }
 
@@ -129,6 +146,23 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
         
+        // Add more audio event listeners for better background support
+        this.audioPlayer.addEventListener('loadstart', () => {
+            console.log('Audio loading started');
+        });
+        this.audioPlayer.addEventListener('canplay', () => {
+            console.log('Audio can start playing');
+            this.updateMediaSession();
+        });
+        this.audioPlayer.addEventListener('playing', () => {
+            console.log('Audio started playing');
+            this.updateMediaSession();
+        });
+        this.audioPlayer.addEventListener('pause', () => {
+            console.log('Audio paused');
+            this.updateMediaSession();
+        });
+        
         // Add visibility change listener for background playback
         document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
         
@@ -140,14 +174,27 @@ class MusicPlayer {
         // Media session API for multimedia keys
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
-                if (!this.isPlaying) this.togglePlayPause();
+                console.log('Media session: play action');
+                if (!this.isPlaying) {
+                    this.togglePlayPause();
+                }
             });
             navigator.mediaSession.setActionHandler('pause', () => {
-                if (this.isPlaying) this.togglePlayPause();
+                console.log('Media session: pause action');
+                if (this.isPlaying) {
+                    this.togglePlayPause();
+                }
             });
-            navigator.mediaSession.setActionHandler('previoustrack', () => this.previousSong());
-            navigator.mediaSession.setActionHandler('nexttrack', () => this.nextSong());
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                console.log('Media session: previous track');
+                this.previousSong();
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                console.log('Media session: next track');
+                this.nextSong();
+            });
             navigator.mediaSession.setActionHandler('seekto', (details) => {
+                console.log('Media session: seek to', details.seekTime);
                 if (details.seekTime && this.audioPlayer.duration) {
                     this.audioPlayer.currentTime = details.seekTime;
                     this.updateMediaSessionPosition();
@@ -234,7 +281,7 @@ class MusicPlayer {
             
             // Enable the auth button
             this.authButton.disabled = false;
-            this.authButton.innerHTML = 'Sign in with Google<i class="fab fa-google auth-btn-google-icon"></i>';
+            this.authButton.textContent = 'Sign in with Google';
             
         } catch (error) {
             console.error('Failed to initialize Google API:', error);
@@ -719,6 +766,7 @@ Please add Google Drive file IDs to your CSV file:
     }
 
     async handleSongEnd() {
+        console.log('Song ended, preparing next song...');
         const wasPlaying = this.isPlaying;
         
         if (this.isShuffleMode) {
@@ -751,21 +799,34 @@ Please add Google Drive file IDs to your CSV file:
         
         // Auto-play the next song if it was playing before
         if (wasPlaying) {
-            // Auto-play the next song
-            setTimeout(() => {
-                this.audioPlayer.play().then(() => {
+            console.log('Auto-playing next song...');
+            // Use a more reliable approach for auto-play
+            const playPromise = this.audioPlayer.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log('Next song auto-play successful');
                     this.isPlaying = true;
                     this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     this.updateMediaSession();
-                    console.log('Next song auto-playing');
                 }).catch(error => {
-                    console.log('Auto-play blocked by browser, user needs to click play');
-                    // Browser blocked auto-play, user needs to manually play
-                    this.isPlaying = false;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    this.updateMediaSession();
+                    console.warn('Auto-play failed:', error);
+                    // Try again after a short delay
+                    setTimeout(() => {
+                        this.audioPlayer.play().then(() => {
+                            console.log('Delayed auto-play successful');
+                            this.isPlaying = true;
+                            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            this.updateMediaSession();
+                        }).catch(err => {
+                            console.log('Auto-play blocked by browser policy');
+                            this.isPlaying = false;
+                            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            this.updateMediaSession();
+                        });
+                    }, 1000);
                 });
-            }, 500); // Small delay to ensure audio is loaded
+            }
         } else {
             // Song ended but was paused, keep in paused state
             this.isPlaying = false;
@@ -897,8 +958,8 @@ Please add Google Drive file IDs to your CSV file:
             this.progressFill.style.width = `${progressPercent}%`;
             this.currentTime.textContent = this.formatTime(currentTime);
             
-            // Update media session position every few seconds to avoid too frequent updates
-            if (Math.floor(currentTime) % 2 === 0) {
+            // Update media session position more frequently for better sync
+            if (Math.floor(currentTime * 2) % 2 === 0) { // Every 0.5 seconds
                 this.updateMediaSessionPosition();
             }
             
@@ -913,7 +974,9 @@ Please add Google Drive file IDs to your CSV file:
         const { duration } = this.audioPlayer;
         if (duration) {
             this.duration.textContent = this.formatTime(duration);
+            // Update media session when duration is available
             this.updateMediaSessionPosition();
+            this.updateMediaSession();
         }
     }
 
