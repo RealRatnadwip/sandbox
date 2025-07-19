@@ -31,6 +31,61 @@ class MusicPlayer {
                     { src: this.albumArt.src, sizes: '200x200', type: 'image/jpeg' }
                 ]
             });
+            
+            // Update playback state
+            navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
+            
+            // Update position state
+            this.updateMediaSessionPosition();
+        }
+    }
+
+    updateMediaSessionPosition() {
+        if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+            if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration)) {
+                navigator.mediaSession.setPositionState({
+                    duration: this.audioPlayer.duration,
+                    playbackRate: this.audioPlayer.playbackRate,
+                    position: this.audioPlayer.currentTime
+                });
+            }
+        }
+    }
+
+    handleVisibilityChange() {
+        // Keep audio context active when page becomes hidden
+        if (document.hidden && this.isPlaying) {
+            console.log('Page hidden, maintaining audio playback');
+            // Ensure audio continues playing in background
+            this.audioPlayer.play().catch(error => {
+                console.warn('Background playback may be restricted:', error);
+            });
+        }
+    }
+
+    handlePageUnload() {
+        // Clean up resources
+        if (this.currentBlobUrl) {
+            URL.revokeObjectURL(this.currentBlobUrl);
+        }
+        if (this.nextSongData) {
+            URL.revokeObjectURL(this.nextSongData.audioUrl);
+        }
+    }
+
+    handlePageHide() {
+        // Page is being hidden (mobile app switch, etc.)
+        console.log('Page hidden, preserving playback state');
+    }
+
+    handlePageShow() {
+        // Page is being shown again
+        console.log('Page shown, checking playback state');
+        if (this.isPlaying && this.audioPlayer.paused) {
+            // Try to resume playback if it was interrupted
+            this.audioPlayer.play().catch(error => {
+                console.warn('Could not resume playback:', error);
+            });
         }
     }
 
@@ -74,6 +129,14 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
         
+        // Add visibility change listener for background playback
+        document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
+        
+        // Add page lifecycle events for better mobile support
+        window.addEventListener('beforeunload', () => this.handlePageUnload());
+        window.addEventListener('pagehide', () => this.handlePageHide());
+        window.addEventListener('pageshow', () => this.handlePageShow());
+        
         // Media session API for multimedia keys
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
@@ -84,6 +147,12 @@ class MusicPlayer {
             });
             navigator.mediaSession.setActionHandler('previoustrack', () => this.previousSong());
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextSong());
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.seekTime && this.audioPlayer.duration) {
+                    this.audioPlayer.currentTime = details.seekTime;
+                    this.updateMediaSessionPosition();
+                }
+            });
         }
     }
 
@@ -650,6 +719,8 @@ Please add Google Drive file IDs to your CSV file:
     }
 
     async handleSongEnd() {
+        const wasPlaying = this.isPlaying;
+        
         if (this.isShuffleMode) {
             // Move to next position in shuffled playlist
             this.shuffleIndex++;
@@ -673,27 +744,42 @@ Please add Google Drive file IDs to your CSV file:
                 console.log('Reached end of playlist');
                 this.isPlaying = false;
                 this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                this.updateMediaSession();
                 return; // Don't try to auto-play
             }
         }
         
-        // Auto-play the next song
-        setTimeout(() => {
+        // Auto-play the next song if it was playing before
+        if (wasPlaying) {
             // Auto-play the next song
             setTimeout(() => {
                 this.audioPlayer.play().then(() => {
                     this.isPlaying = true;
                     this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    this.updateMediaSession();
                     console.log('Next song auto-playing');
                 }).catch(error => {
                     console.log('Auto-play blocked by browser, user needs to click play');
                     // Browser blocked auto-play, user needs to manually play
+                    this.isPlaying = false;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    this.updateMediaSession();
                 });
             }, 500); // Small delay to ensure audio is loaded
-        }, 500);
+        } else {
+            // Song ended but was paused, keep in paused state
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            this.updateMediaSession();
+        }
     }
 
     async nextSong() {
+        const wasPlaying = this.isPlaying;
+        
+        // Stop current playback
+        this.audioPlayer.pause();
+        
         const nextIndex = this.getNextSongIndex();
         if (nextIndex === -1) {
             console.log('No next song available');
@@ -708,9 +794,34 @@ Please add Google Drive file IDs to your CSV file:
         }
         
         await this.loadSong(this.currentSongIndex);
+        
+        // Restore previous playing state
+        if (wasPlaying) {
+            setTimeout(() => {
+                this.audioPlayer.play().then(() => {
+                    this.isPlaying = true;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    this.updateMediaSession();
+                }).catch(error => {
+                    console.warn('Could not auto-play next song:', error);
+                    this.isPlaying = false;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    this.updateMediaSession();
+                });
+            }, 300);
+        } else {
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            this.updateMediaSession();
+        }
     }
 
     async previousSong() {
+        const wasPlaying = this.isPlaying;
+        
+        // Stop current playback
+        this.audioPlayer.pause();
+        
         const prevIndex = this.getPreviousSongIndex();
         if (prevIndex === -1) {
             console.log('No previous song available');
@@ -725,6 +836,26 @@ Please add Google Drive file IDs to your CSV file:
         }
         
         await this.loadSong(this.currentSongIndex);
+        
+        // Restore previous playing state
+        if (wasPlaying) {
+            setTimeout(() => {
+                this.audioPlayer.play().then(() => {
+                    this.isPlaying = true;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    this.updateMediaSession();
+                }).catch(error => {
+                    console.warn('Could not auto-play previous song:', error);
+                    this.isPlaying = false;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    this.updateMediaSession();
+                });
+            }, 300);
+        } else {
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            this.updateMediaSession();
+        }
     }
 
     togglePlayPause() {
@@ -736,6 +867,7 @@ Please add Google Drive file IDs to your CSV file:
             this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
         this.isPlaying = !this.isPlaying;
+        this.updateMediaSession();
     }
 
     toggleMute() {
@@ -755,6 +887,7 @@ Please add Google Drive file IDs to your CSV file:
         const percent = (event.clientX - rect.left) / rect.width;
         const seekTime = percent * this.audioPlayer.duration;
         this.audioPlayer.currentTime = seekTime;
+        this.updateMediaSessionPosition();
     }
 
     updateProgress() {
@@ -763,6 +896,11 @@ Please add Google Drive file IDs to your CSV file:
             const progressPercent = (currentTime / duration) * 100;
             this.progressFill.style.width = `${progressPercent}%`;
             this.currentTime.textContent = this.formatTime(currentTime);
+            
+            // Update media session position every few seconds to avoid too frequent updates
+            if (Math.floor(currentTime) % 2 === 0) {
+                this.updateMediaSessionPosition();
+            }
             
             // Pre-load next song when current song is 80% complete
             if (progressPercent >= 80 && !this.isPreloading) {
@@ -775,6 +913,7 @@ Please add Google Drive file IDs to your CSV file:
         const { duration } = this.audioPlayer;
         if (duration) {
             this.duration.textContent = this.formatTime(duration);
+            this.updateMediaSessionPosition();
         }
     }
 
