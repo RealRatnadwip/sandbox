@@ -17,7 +17,7 @@ I started this website after finishing high school as a way to learn more about 
 
 ## 🧪 Test Pages
 
-There’s also a `TestPages` folder here, which I use to try out new things or host pages that aren’t directly related to the main site. Think of it as a sandbox for experiments and learning.
+There’s also a `Temp` folder here, which I use to try out new things or host pages that aren’t directly related to the main site. Think of it as a sandbox for experiments and learning.
 
 ## 🚀 My Journey
 
