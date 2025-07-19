@@ -945,7 +945,13 @@ Please add Google Drive file IDs to your CSV file:
     async handleSongEnd() {
         console.log('Song ended, preparing next song...');
         const wasPlaying = this.isPlaying;
-
+        
+        // Clear any end detection interval
+        if (this.endDetectionInterval) {
+            clearInterval(this.endDetectionInterval);
+            this.endDetectionInterval = null;
+        }
+    
         if (this.isShuffleMode) {
             // Move to next position in shuffled playlist
             this.shuffleIndex++;
@@ -973,39 +979,65 @@ Please add Google Drive file IDs to your CSV file:
                 return; // Don't try to auto-play
             }
         }
-
+    
         // Auto-play the next song if it was playing before
         if (wasPlaying) {
             console.log('Auto-playing next song...');
-
-            // More reliable auto-play approach for mobile
-            this.isPlaying = true;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            this.updateMediaSession();
-
-            // Try to play with better mobile support
+        
+            // Wait for the audio element to be ready before attempting to play
             const playNext = async () => {
                 try {
-                    // Wait a bit for the audio to be ready
-                    await new Promise(resolve => {
-                        if (this.audioPlayer.readyState >= 2) {
-                            resolve();
-                        } else {
-                            this.audioPlayer.addEventListener('canplay', resolve, { once: true });
-                            // Fallback timeout
-                            setTimeout(resolve, 1000);
-                        }
+                    // Wait for audio to be ready to play
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
+                        
+                        const checkReady = () => {
+                            if (this.audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA or better
+                                clearTimeout(timeout);
+                                resolve();
+                            } else {
+                                // Listen for when it's ready
+                                const onCanPlay = () => {
+                                    clearTimeout(timeout);
+                                    this.audioPlayer.removeEventListener('canplay', onCanPlay);
+                                    this.audioPlayer.removeEventListener('loadeddata', onCanPlay);
+                                    resolve();
+                                };
+                                
+                                this.audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
+                                this.audioPlayer.addEventListener('loadeddata', onCanPlay, { once: true });
+                            }
+                        };
+                        
+                        checkReady();
                     });
-
+                
+                    // Now attempt to play
                     await this.audioPlayer.play();
+                    
+                    // Update UI state only after successful play
+                    this.isPlaying = true;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    this.updateMediaSession();
+                    
                     console.log('Next song auto-play successful');
+                    
                 } catch (error) {
-                    console.warn('Auto-play failed, likely due to browser policy:', error);
-                    // Don't change UI state - keep it as "playing" so user can manually resume
+                    console.warn('Auto-play failed:', error);
+                    
+                    // Set UI to paused state so user can manually play
+                    this.isPlaying = false;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    this.updateMediaSession();
+                    
+                    // Show a subtle indication that user interaction is needed
+                    console.log('Auto-play blocked - user interaction required');
                 }
             };
-
+        
+            // Start the play attempt
             playNext();
+            
         } else {
             // Song ended but was paused, keep in paused state
             this.isPlaying = false;
@@ -1013,6 +1045,7 @@ Please add Google Drive file IDs to your CSV file:
             this.updateMediaSession();
         }
     }
+
     async nextSong() {
         const wasPlaying = this.isPlaying;
         
