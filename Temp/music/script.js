@@ -601,10 +601,10 @@ Please add Google Drive file IDs to your CSV file:
                     const { title, artist, picture } = tag.tags;
                     
                     // Update song info only if metadata is available and better than filename
-                    if (title && title.trim()) {
+                    if (title !== null) {
                         this.songTitle.textContent = title;
                     }
-                    if (artist && artist.trim()) {
+                    if (artist !== null) {
                         this.artistName.textContent = artist;
                     }
                     
