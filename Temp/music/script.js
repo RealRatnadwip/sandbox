@@ -15,10 +15,6 @@ class MusicPlayer {
         this.isShuffleMode = false; // Shuffle mode state
         this.shuffledPlaylist = []; // Shuffled order of song indices
         this.shuffleIndex = 0; // Current position in shuffled playlist
-        this.endDetectionInterval = null; // For detecting song end when locked
-        this.lastKnownTime = 0; // Track playback position
-        this.stuckTimeCount = 0; // Count how long time has been stuck
-        this.mediaSessionInitialized = false;
         
         this.initializeElements();
         this.setupEventListeners();
@@ -27,91 +23,13 @@ class MusicPlayer {
     }
 
     updateMediaSession() {
-       if ('mediaSession' in navigator) {
-           // Ensure we have valid metadata before setting
-           const title = this.songTitle.textContent || 'Unknown Title';
-           const artist = this.artistName.textContent || 'Unknown Artist';
-           const artwork = this.albumArt.src || '';
-           
-           // Always set metadata, even if empty
-           navigator.mediaSession.metadata = new MediaMetadata({
-               title: title,
-               artist: artist,
-               album: '', // Add empty album field
-               artwork: artwork ? [
-                   { src: artwork, sizes: '96x96', type: 'image/jpeg' },
-                   { src: artwork, sizes: '128x128', type: 'image/jpeg' },
-                   { src: artwork, sizes: '192x192', type: 'image/jpeg' },
-                   { src: artwork, sizes: '256x256', type: 'image/jpeg' },
-                   { src: artwork, sizes: '384x384', type: 'image/jpeg' },
-                   { src: artwork, sizes: '512x512', type: 'image/jpeg' }
-               ] : []
-           });
-           
-           // Update playback state - this is crucial for mobile
-           navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
-           
-           // Update position state immediately if audio is ready
-           if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration) && this.audioPlayer.duration > 0) {
-               this.updateMediaSessionPosition();
-           }
-       }
-    }
-
-    updateMediaSessionPosition() {
-        if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-            if (this.audioPlayer.duration && !isNaN(this.audioPlayer.duration) && this.audioPlayer.duration > 0) {
-                navigator.mediaSession.setPositionState({
-                    duration: this.audioPlayer.duration,
-                    playbackRate: this.audioPlayer.playbackRate,
-                    position: this.audioPlayer.currentTime
-                });
-            }
-        }
-    }
-
-    handleVisibilityChange() {
-        if (document.hidden) {
-            console.log('Page hidden - background mode');
-            // Ensure media session is active for background controls
-            if (this.isPlaying) {
-                this.updateMediaSession();
-            }
-        } else {
-            console.log('Page visible - foreground mode');
-            // Sync UI state with actual audio state
-            const actuallyPlaying = !this.audioPlayer.paused && this.audioPlayer.currentTime > 0;
-            if (this.isPlaying !== actuallyPlaying) {
-                console.log('Syncing play state:', actuallyPlaying);
-                this.isPlaying = actuallyPlaying;
-                this.playPauseBtn.innerHTML = this.isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-                this.updateMediaSession();
-            }
-        }
-    }
-
-    handlePageUnload() {
-        // Clean up resources
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-        }
-        if (this.nextSongData) {
-            URL.revokeObjectURL(this.nextSongData.audioUrl);
-        }
-    }
-
-    handlePageHide() {
-        // Page is being hidden (mobile app switch, etc.)
-        console.log('Page hidden, preserving playback state');
-    }
-
-    handlePageShow() {
-        // Page is being shown again
-        console.log('Page shown, checking playback state');
-        if (this.isPlaying && this.audioPlayer.paused) {
-            // Try to resume playback if it was interrupted
-            this.audioPlayer.play().catch(error => {
-                console.warn('Could not resume playback:', error);
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: this.songTitle.textContent || 'Unknown Title',
+                artist: this.artistName.textContent || 'Unknown Artist',
+                artwork: [
+                    { src: this.albumArt.src, sizes: '200x200', type: 'image/jpeg' }
+                ]
             });
         }
     }
@@ -154,110 +72,18 @@ class MusicPlayer {
         this.audioPlayer.addEventListener('loadedmetadata', () => this.updateDuration());
         this.audioPlayer.addEventListener('timeupdate', () => this.updateProgress());
         this.audioPlayer.addEventListener('ended', () => this.handleSongEnd());
-        this.audioPlayer.addEventListener('ended', () => this.handleSongEndBackup());
         this.audioPlayer.addEventListener('error', (e) => this.handleAudioError(e));
-        
-        // Add more audio event listeners for better background support
-        this.audioPlayer.addEventListener('loadstart', () => {
-            console.log('Audio loading started');
-        });
-        this.audioPlayer.addEventListener('canplay', () => {
-            console.log('Audio can start playing');
-            this.updateMediaSession();
-        });
-        this.audioPlayer.addEventListener('playing', () => {
-            console.log('Audio started playing');
-            this.isPlaying = true;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            this.updateMediaSession();
-        });
-        this.audioPlayer.addEventListener('pause', () => {
-            console.log('Audio paused');
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            this.updateMediaSession();
-        });
-        this.audioPlayer.addEventListener('stalled', () => {
-            console.log('Audio stalled - checking if song ended');
-            this.checkIfSongShouldEnd();
-        });
-        this.audioPlayer.addEventListener('suspend', () => {
-            console.log('Audio suspended - setting up end detection');
-            this.setupEndDetection();
-        });
-        this.audioPlayer.addEventListener('loadeddata', () => {
-            console.log('Audio loaded and ready');
-            // Clear any existing end detection
-            if (this.endDetectionInterval) {
-                clearInterval(this.endDetectionInterval);
-                this.endDetectionInterval = null;
-            }
-        });
-        
-        // Add visibility change listener for background playback
-        document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
-        
-        // Add page lifecycle events for better mobile support
-        window.addEventListener('beforeunload', () => this.handlePageUnload());
-        window.addEventListener('pagehide', () => this.handlePageHide());
-        window.addEventListener('pageshow', () => this.handlePageShow());
         
         // Media session API for multimedia keys
         if ('mediaSession' in navigator) {
             navigator.mediaSession.setActionHandler('play', () => {
-                console.log('Media session: play action');
-                if (!this.isPlaying && !this.audioPlayer.paused) {
-                    // Audio is ready to play
-                    this.audioPlayer.play().then(() => {
-                        this.isPlaying = true;
-                        this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                        this.updateMediaSession();
-                    }).catch(error => {
-                        console.error('Media session play failed:', error);
-                    });
-                } else if (!this.isPlaying && this.audioPlayer.paused) {
-                    // Audio is paused, resume it
-                    this.togglePlayPause();
-                }
+                if (!this.isPlaying) this.togglePlayPause();
             });
-
             navigator.mediaSession.setActionHandler('pause', () => {
-                console.log('Media session: pause action');
-                if (this.isPlaying && !this.audioPlayer.paused) {
-                    this.togglePlayPause();
-                }
+                if (this.isPlaying) this.togglePlayPause();
             });
-
-            navigator.mediaSession.setActionHandler('previoustrack', () => {
-                console.log('Media session: previous track');
-                this.previousSong();
-            });
-
-            navigator.mediaSession.setActionHandler('nexttrack', () => {
-                console.log('Media session: next track');
-                this.nextSong();
-            });
-
-            navigator.mediaSession.setActionHandler('seekto', (details) => {
-                console.log('Media session: seek to', details.seekTime);
-                if (details.seekTime && this.audioPlayer.duration) {
-                    this.audioPlayer.currentTime = details.seekTime;
-                    this.updateMediaSessionPosition();
-                }
-            });
-
-            // Add these additional handlers for better mobile support
-            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-                const skipTime = details.seekOffset || 10;
-                this.audioPlayer.currentTime = Math.max(0, this.audioPlayer.currentTime - skipTime);
-                this.updateMediaSessionPosition();
-            });
-
-            navigator.mediaSession.setActionHandler('seekforward', (details) => {
-                const skipTime = details.seekOffset || 10;
-                this.audioPlayer.currentTime = Math.min(this.audioPlayer.duration, this.audioPlayer.currentTime + skipTime);
-                this.updateMediaSessionPosition();
-            });
+            navigator.mediaSession.setActionHandler('previoustrack', () => this.previousSong());
+            navigator.mediaSession.setActionHandler('nexttrack', () => this.nextSong());
         }
     }
 
@@ -345,113 +171,6 @@ class MusicPlayer {
             console.error('Failed to initialize Google API:', error);
             alert('Failed to initialize Google API. Please check your setup and try refreshing the page.');
             this.authButton.textContent = 'Initialization Failed - Refresh Page';
-        }
-    }
-
-    initializeMediaSessionForSong() {
-        if ('mediaSession' in navigator) {
-            // Set initial metadata
-            this.updateMediaSession();
-
-            // Set up action handlers if not already done
-            if (!this.mediaSessionInitialized) {
-                this.setupMediaSessionHandlers();
-                this.mediaSessionInitialized = true;
-            }
-        }
-    }
-
-    setupMediaSessionHandlers() {
-        if ('mediaSession' in navigator) {
-            // Set all action handlers
-            const handlers = {
-                play: () => {
-                    console.log('Media session: play');
-                    if (!this.isPlaying) this.togglePlayPause();
-                },
-                pause: () => {
-                    console.log('Media session: pause');
-                    if (this.isPlaying) this.togglePlayPause();
-                },
-                previoustrack: () => {
-                    console.log('Media session: previous');
-                    this.previousSong();
-                },
-                nexttrack: () => {
-                    console.log('Media session: next');
-                    this.nextSong();
-                },
-                seekto: (details) => {
-                    if (details.seekTime && this.audioPlayer.duration) {
-                        this.audioPlayer.currentTime = details.seekTime;
-                        this.updateMediaSessionPosition();
-                    }
-                },
-                seekbackward: (details) => {
-                    const skipTime = details.seekOffset || 10;
-                    this.audioPlayer.currentTime = Math.max(0, this.audioPlayer.currentTime - skipTime);
-                    this.updateMediaSessionPosition();
-                },
-                seekforward: (details) => {
-                    const skipTime = details.seekOffset || 10;
-                    this.audioPlayer.currentTime = Math.min(this.audioPlayer.duration, this.audioPlayer.currentTime + skipTime);
-                    this.updateMediaSessionPosition();
-                }
-            };
-
-            // Set all handlers
-            for (const [action, handler] of Object.entries(handlers)) {
-                try {
-                    navigator.mediaSession.setActionHandler(action, handler);
-                } catch (error) {
-                    console.warn(`Media session action ${action} not supported:`, error);
-                }
-            }
-        }
-    }
-
-    setupEndDetection() {
-        // Clear any existing interval
-        if (this.endDetectionInterval) {
-            clearInterval(this.endDetectionInterval);
-        }
-
-        // Only set up if audio is playing
-        if (this.isPlaying && !this.audioPlayer.paused) {
-            this.endDetectionInterval = setInterval(() => {
-                this.checkIfSongShouldEnd();
-            }, 1000);
-        }
-    }
-
-    checkIfSongShouldEnd() {
-        if (!this.isPlaying || this.audioPlayer.paused) {
-            if (this.endDetectionInterval) {
-                clearInterval(this.endDetectionInterval);
-                this.endDetectionInterval = null;
-            }
-            return;
-        }
-
-        const currentTime = this.audioPlayer.currentTime;
-        const duration = this.audioPlayer.duration;
-
-        // Check if time is stuck (hasn't changed)
-        if (Math.abs(currentTime - this.lastKnownTime) < 0.1) {
-            this.stuckTimeCount++;
-
-            // If time has been stuck for 3+ seconds and we're near the end
-            if (this.stuckTimeCount >= 3 && duration && currentTime >= duration - 1) {
-                console.log('Detected stuck audio near end, triggering song end');
-                if (this.endDetectionInterval) {
-                    clearInterval(this.endDetectionInterval);
-                    this.endDetectionInterval = null;
-                }
-                this.handleSongEnd();
-            }
-        } else {
-            this.lastKnownTime = currentTime;
-            this.stuckTimeCount = 0;
         }
     }
 
@@ -737,7 +456,6 @@ Please add Google Drive file IDs to your CSV file:
             await this.getFileMetadata(songData.fileId);
             
             this.hideLoading();
-            this.initializeMediaSessionForSong();
             
         } catch (error) {
             console.error('Failed to load song:', error);
@@ -761,63 +479,47 @@ Please add Google Drive file IDs to your CSV file:
                 fileId: fileId,
                 fields: 'name,mimeType'
             });
-
+            
             const fileName = response.result.name;
-
+            
             // Extract title and artist from filename if possible
             let title = 'Unknown Title';
             let artist = 'Unknown Artist';
-
+            
             if (fileName) {
                 // Remove file extension
                 const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
-
-                // Try to parse different formats, being more flexible with non-Latin text
+                
+                // Try to parse "Artist - Title" format
                 if (nameWithoutExt.includes(' - ')) {
                     const parts = nameWithoutExt.split(' - ');
                     artist = parts[0].trim();
                     title = parts.slice(1).join(' - ').trim();
-                } else if (nameWithoutExt.includes(' – ')) { // em dash
-                    const parts = nameWithoutExt.split(' – ');
-                    artist = parts[0].trim();
-                    title = parts.slice(1).join(' – ').trim();
-                } else if (nameWithoutExt.includes('—')) { // em dash without spaces
-                    const parts = nameWithoutExt.split('—');
-                    artist = parts[0].trim();
-                    title = parts.slice(1).join('—').trim();
                 } else {
                     title = nameWithoutExt;
                 }
-
-                // Fallback: if title or artist is empty, use filename
-                if (!title || title.trim() === '') {
-                    title = nameWithoutExt;
-                }
-                if (!artist || artist.trim() === '') {
-                    artist = 'Unknown Artist';
-                }
             }
-
+            
             // Update song info
             this.songTitle.textContent = title;
             this.artistName.textContent = artist;
-
+            
             // Handle artist name scrolling
             this.setupTextScrolling();
-
+            
             // Set default album art only if no album art was loaded from metadata
             if (!this.albumArtLoaded) {
                 this.albumArt.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik0xMDAgNTBMMTUwIDEwMEwxMDAgMTUwTDUwIDEwMEwxMDAgNTBaIiBmaWxsPSIjRTBGMTFGIi8+Cjwvc3ZnPg==";
             }
-
+            
             // Update media session
             this.updateMediaSession();
-
+            
             console.log('Song info updated:', {
                 title: this.songTitle.textContent,
                 artist: this.artistName.textContent
             });
-
+            
         } catch (error) {
             console.error('Failed to get file metadata:', error);
             this.songTitle.textContent = 'Unknown Title';
@@ -892,26 +594,23 @@ Please add Google Drive file IDs to your CSV file:
     async extractMetadataFromBlob(blob) {
         return new Promise((resolve, reject) => {
             console.log('Extracting metadata from blob:', blob.size, 'bytes');
-
+            
             jsmediatags.read(blob, {
                 onSuccess: (tag) => {
                     console.log('Metadata extraction successful:', tag.tags);
                     const { title, artist, picture } = tag.tags;
-
-                    // Update song info only if metadata is available and not empty
-                    // Be more lenient with text validation for non-Latin languages
-                    if (title && typeof title === 'string' && title.trim().length > 0) {
-                        this.songTitle.textContent = title.trim();
-                        console.log('Using metadata title:', title);
+                    
+                    // Update song info only if metadata is available and better than filename
+                    if (title && title.trim()) {
+                        this.songTitle.textContent = title;
                     }
-                    if (artist && typeof artist === 'string' && artist.trim().length > 0) {
-                        this.artistName.textContent = artist.trim();
-                        console.log('Using metadata artist:', artist);
+                    if (artist && artist.trim()) {
+                        this.artistName.textContent = artist;
                     }
-
+                    
                     // Handle artist name scrolling
                     this.setupTextScrolling();
-
+                    
                     // Update album art
                     if (picture) {
                         console.log('Album art found in metadata');
@@ -922,7 +621,7 @@ Please add Google Drive file IDs to your CSV file:
                         this.albumArt.src = url;
                         this.albumArtLoaded = true; // Mark album art as loaded
                     }
-
+                    
                     resolve();
                 },
                 onError: (error) => {
@@ -951,185 +650,50 @@ Please add Google Drive file IDs to your CSV file:
     }
 
     async handleSongEnd() {
-        console.log('Song ended, preparing next song...');
-        
-        // Store the current playing state before any changes
-        const wasPlaying = this.isPlaying;
-        
-        // Clear any end detection interval immediately
-        if (this.endDetectionInterval) {
-            clearInterval(this.endDetectionInterval);
-            this.endDetectionInterval = null;
-        }
-
-        // Reset stuck time tracking
-        this.lastKnownTime = 0;
-        this.stuckTimeCount = 0;
-
-        // Determine next song index based on shuffle mode
-        let nextSongIndex;
-
         if (this.isShuffleMode) {
             // Move to next position in shuffled playlist
-            const nextShuffleIndex = this.shuffleIndex + 1;
-
-            if (nextShuffleIndex < this.shuffledPlaylist.length) {
-                this.shuffleIndex = nextShuffleIndex;
-                nextSongIndex = this.shuffledPlaylist[this.shuffleIndex];
+            this.shuffleIndex++;
+            if (this.shuffleIndex < this.shuffledPlaylist.length) {
+                this.currentSongIndex = this.shuffledPlaylist[this.shuffleIndex];
+                await this.loadSong(this.currentSongIndex);
             } else {
-                // End of shuffled playlist, create new shuffle and start over
-                console.log('End of shuffled playlist, creating new shuffle');
+                // End of shuffled playlist, create new shuffle and continue
+                console.log('End of shuffled playlist, creating new shuffle and continuing');
                 this.createShuffledPlaylist();
                 this.shuffleIndex = 0;
-                nextSongIndex = this.shuffledPlaylist[0];
+                this.currentSongIndex = this.shuffledPlaylist[0];
+                await this.loadSong(this.currentSongIndex);
             }
         } else {
-            // Normal sequential mode
+            // Normal mode
             if (this.currentSongIndex < this.songIds.length - 1) {
-                nextSongIndex = this.currentSongIndex + 1;
+                this.currentSongIndex++;
+                await this.loadSong(this.currentSongIndex);
             } else {
-                // Reached end of playlist
                 console.log('Reached end of playlist');
                 this.isPlaying = false;
                 this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                this.updateMediaSession();
-                return;
+                return; // Don't try to auto-play
             }
         }
-
-        try {
-            // Update current song index
-            this.currentSongIndex = nextSongIndex;
-
-            // Load the next song
-            await this.loadSong(this.currentSongIndex);
-
-            // If the previous song was playing, attempt to auto-play the next one
-            if (wasPlaying) {
-                console.log('Attempting to auto-play next song...');
-
-                // Create a promise-based approach for better error handling
-                const attemptAutoPlay = () => {
-                    return new Promise((resolve, reject) => {
-                        // Set a reasonable timeout
-                        const timeout = setTimeout(() => {
-                            reject(new Error('Auto-play timeout'));
-                        }, 3000);
-
-                        const tryPlay = () => {
-                            // Check if audio is ready to play
-                            if (this.audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA or better
-                                clearTimeout(timeout);
-
-                                // Attempt to play
-                                this.audioPlayer.play()
-                                    .then(() => {
-                                        console.log('Auto-play successful');
-                                        this.isPlaying = true;
-                                        this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                                        this.updateMediaSession();
-                                        resolve();
-                                    })
-                                    .catch((error) => {
-                                        console.warn('Auto-play failed:', error);
-                                        reject(error);
-                                    });
-                            } else {
-                                // Wait for audio to be ready
-                                const onCanPlay = () => {
-                                    clearTimeout(timeout);
-                                    this.audioPlayer.removeEventListener('canplay', onCanPlay);
-                                    this.audioPlayer.removeEventListener('loadeddata', onCanPlay);
-                                    this.audioPlayer.removeEventListener('error', onError);
-
-                                    // Now try to play
-                                    this.audioPlayer.play()
-                                        .then(() => {
-                                            console.log('Auto-play successful after loading');
-                                            this.isPlaying = true;
-                                            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                                            this.updateMediaSession();
-                                            resolve();
-                                        })
-                                        .catch((error) => {
-                                            console.warn('Auto-play failed after loading:', error);
-                                            reject(error);
-                                        });
-                                };
-
-                                const onError = (error) => {
-                                    clearTimeout(timeout);
-                                    this.audioPlayer.removeEventListener('canplay', onCanPlay);
-                                    this.audioPlayer.removeEventListener('loadeddata', onCanPlay);
-                                    this.audioPlayer.removeEventListener('error', onError);
-                                    reject(error);
-                                };
-
-                                // Listen for when audio is ready
-                                this.audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
-                                this.audioPlayer.addEventListener('loadeddata', onCanPlay, { once: true });
-                                this.audioPlayer.addEventListener('error', onError, { once: true });
-                            }
-                        };
-
-                        // Start the attempt
-                        tryPlay();
-                    });
-                };
-
-                // Execute the auto-play attempt
-                try {
-                    await attemptAutoPlay();
-                } catch (error) {
-                    console.warn('Auto-play failed, user interaction required:', error.message);
-
-                    // Set UI to paused state so user can manually play
-                    this.isPlaying = false;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    this.updateMediaSession();
-
-                    // Optional: Show a brief visual indicator that user action is needed
-                    // You could add a subtle animation or notification here
-                }
-            } else {
-                // Previous song was paused, keep next song paused
-                this.isPlaying = false;
-                this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                this.updateMediaSession();
-            }
-
-        } catch (error) {
-            console.error('Failed to load next song:', error);
-
-            // Fallback: try to load the next song in sequence
-            if (nextSongIndex < this.songIds.length - 1) {
-                console.log('Trying next song due to load error...');
-                this.currentSongIndex = nextSongIndex;
-
-                // Update shuffle index if needed
-                if (this.isShuffleMode) {
-                    this.shuffleIndex++;
-                }
-
-                // Recursive call to try the next song
-                setTimeout(() => this.handleSongEnd(), 1000);
-            } else {
-                // No more songs to try
-                console.error('No more songs available');
-                this.isPlaying = false;
-                this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                this.updateMediaSession();
-                alert('Unable to load the next song. Please check your connection.');
-            }
-        }
+        
+        // Auto-play the next song
+        setTimeout(() => {
+            // Auto-play the next song
+            setTimeout(() => {
+                this.audioPlayer.play().then(() => {
+                    this.isPlaying = true;
+                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    console.log('Next song auto-playing');
+                }).catch(error => {
+                    console.log('Auto-play blocked by browser, user needs to click play');
+                    // Browser blocked auto-play, user needs to manually play
+                });
+            }, 500); // Small delay to ensure audio is loaded
+        }, 500);
     }
 
     async nextSong() {
-        const wasPlaying = this.isPlaying;
-        
-        // Stop current playback
-        this.audioPlayer.pause();
-        
         const nextIndex = this.getNextSongIndex();
         if (nextIndex === -1) {
             console.log('No next song available');
@@ -1144,34 +708,9 @@ Please add Google Drive file IDs to your CSV file:
         }
         
         await this.loadSong(this.currentSongIndex);
-        
-        // Restore previous playing state
-        if (wasPlaying) {
-            setTimeout(() => {
-                this.audioPlayer.play().then(() => {
-                    this.isPlaying = true;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    this.updateMediaSession();
-                }).catch(error => {
-                    console.warn('Could not auto-play next song:', error);
-                    this.isPlaying = false;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    this.updateMediaSession();
-                });
-            }, 300);
-        } else {
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            this.updateMediaSession();
-        }
     }
 
     async previousSong() {
-        const wasPlaying = this.isPlaying;
-        
-        // Stop current playback
-        this.audioPlayer.pause();
-        
         const prevIndex = this.getPreviousSongIndex();
         if (prevIndex === -1) {
             console.log('No previous song available');
@@ -1186,53 +725,17 @@ Please add Google Drive file IDs to your CSV file:
         }
         
         await this.loadSong(this.currentSongIndex);
-        
-        // Restore previous playing state
-        if (wasPlaying) {
-            setTimeout(() => {
-                this.audioPlayer.play().then(() => {
-                    this.isPlaying = true;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    this.updateMediaSession();
-                }).catch(error => {
-                    console.warn('Could not auto-play previous song:', error);
-                    this.isPlaying = false;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    this.updateMediaSession();
-                });
-            }, 300);
-        } else {
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            this.updateMediaSession();
-        }
     }
 
     togglePlayPause() {
         if (this.isPlaying) {
             this.audioPlayer.pause();
             this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            this.isPlaying = false;
         } else {
-            const playPromise = this.audioPlayer.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    this.isPlaying = true;
-                    this.updateMediaSession();
-                }).catch(error => {
-                    console.error('Play failed:', error);
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    this.isPlaying = false;
-                });
-            } else {
-                this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                this.isPlaying = true;
-            }
+            this.audioPlayer.play();
+            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
-
-        // Always update media session after state change
-        this.updateMediaSession();
+        this.isPlaying = !this.isPlaying;
     }
 
     toggleMute() {
@@ -1252,7 +755,6 @@ Please add Google Drive file IDs to your CSV file:
         const percent = (event.clientX - rect.left) / rect.width;
         const seekTime = percent * this.audioPlayer.duration;
         this.audioPlayer.currentTime = seekTime;
-        this.updateMediaSessionPosition();
     }
 
     updateProgress() {
@@ -1261,15 +763,6 @@ Please add Google Drive file IDs to your CSV file:
             const progressPercent = (currentTime / duration) * 100;
             this.progressFill.style.width = `${progressPercent}%`;
             this.currentTime.textContent = this.formatTime(currentTime);
-            
-            // Track time for end detection
-            this.lastKnownTime = currentTime;
-            this.stuckTimeCount = 0; // Reset stuck counter when time updates
-            
-            // Update media session position every second
-            if (Math.floor(currentTime) !== Math.floor(this.lastKnownTime)) {
-                this.updateMediaSessionPosition();
-            }
             
             // Pre-load next song when current song is 80% complete
             if (progressPercent >= 80 && !this.isPreloading) {
@@ -1282,9 +775,6 @@ Please add Google Drive file IDs to your CSV file:
         const { duration } = this.audioPlayer;
         if (duration) {
             this.duration.textContent = this.formatTime(duration);
-            // Update media session when duration is available
-            this.updateMediaSessionPosition();
-            this.updateMediaSession();
         }
     }
 
