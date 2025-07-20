@@ -185,6 +185,14 @@ class MusicPlayer {
             console.log('Audio suspended - setting up end detection');
             this.setupEndDetection();
         });
+        this.audioPlayer.addEventListener('loadeddata', () => {
+            console.log('Audio loaded and ready');
+            // Clear any existing end detection
+            if (this.endDetectionInterval) {
+                clearInterval(this.endDetectionInterval);
+                this.endDetectionInterval = null;
+            }
+        });
         
         // Add visibility change listener for background playback
         document.addEventListener('visibilitychange', () => this.handleVisibilityChange());
@@ -944,105 +952,175 @@ Please add Google Drive file IDs to your CSV file:
 
     async handleSongEnd() {
         console.log('Song ended, preparing next song...');
+        
+        // Store the current playing state before any changes
         const wasPlaying = this.isPlaying;
         
-        // Clear any end detection interval
+        // Clear any end detection interval immediately
         if (this.endDetectionInterval) {
             clearInterval(this.endDetectionInterval);
             this.endDetectionInterval = null;
         }
-    
+
+        // Reset stuck time tracking
+        this.lastKnownTime = 0;
+        this.stuckTimeCount = 0;
+
+        // Determine next song index based on shuffle mode
+        let nextSongIndex;
+
         if (this.isShuffleMode) {
             // Move to next position in shuffled playlist
-            this.shuffleIndex++;
-            if (this.shuffleIndex < this.shuffledPlaylist.length) {
-                this.currentSongIndex = this.shuffledPlaylist[this.shuffleIndex];
-                await this.loadSong(this.currentSongIndex);
+            const nextShuffleIndex = this.shuffleIndex + 1;
+
+            if (nextShuffleIndex < this.shuffledPlaylist.length) {
+                this.shuffleIndex = nextShuffleIndex;
+                nextSongIndex = this.shuffledPlaylist[this.shuffleIndex];
             } else {
-                // End of shuffled playlist, create new shuffle and continue
-                console.log('End of shuffled playlist, creating new shuffle and continuing');
+                // End of shuffled playlist, create new shuffle and start over
+                console.log('End of shuffled playlist, creating new shuffle');
                 this.createShuffledPlaylist();
                 this.shuffleIndex = 0;
-                this.currentSongIndex = this.shuffledPlaylist[0];
-                await this.loadSong(this.currentSongIndex);
+                nextSongIndex = this.shuffledPlaylist[0];
             }
         } else {
-            // Normal mode
+            // Normal sequential mode
             if (this.currentSongIndex < this.songIds.length - 1) {
-                this.currentSongIndex++;
-                await this.loadSong(this.currentSongIndex);
+                nextSongIndex = this.currentSongIndex + 1;
             } else {
+                // Reached end of playlist
                 console.log('Reached end of playlist');
                 this.isPlaying = false;
                 this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                 this.updateMediaSession();
-                return; // Don't try to auto-play
+                return;
             }
         }
-    
-        // Auto-play the next song if it was playing before
-        if (wasPlaying) {
-            console.log('Auto-playing next song...');
-        
-            // Wait for the audio element to be ready before attempting to play
-            const playNext = async () => {
-                try {
-                    // Wait for audio to be ready to play
-                    await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => reject(new Error('Timeout')), 5000);
-                        
-                        const checkReady = () => {
+
+        try {
+            // Update current song index
+            this.currentSongIndex = nextSongIndex;
+
+            // Load the next song
+            await this.loadSong(this.currentSongIndex);
+
+            // If the previous song was playing, attempt to auto-play the next one
+            if (wasPlaying) {
+                console.log('Attempting to auto-play next song...');
+
+                // Create a promise-based approach for better error handling
+                const attemptAutoPlay = () => {
+                    return new Promise((resolve, reject) => {
+                        // Set a reasonable timeout
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Auto-play timeout'));
+                        }, 3000);
+
+                        const tryPlay = () => {
+                            // Check if audio is ready to play
                             if (this.audioPlayer.readyState >= 2) { // HAVE_CURRENT_DATA or better
                                 clearTimeout(timeout);
-                                resolve();
+
+                                // Attempt to play
+                                this.audioPlayer.play()
+                                    .then(() => {
+                                        console.log('Auto-play successful');
+                                        this.isPlaying = true;
+                                        this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                        this.updateMediaSession();
+                                        resolve();
+                                    })
+                                    .catch((error) => {
+                                        console.warn('Auto-play failed:', error);
+                                        reject(error);
+                                    });
                             } else {
-                                // Listen for when it's ready
+                                // Wait for audio to be ready
                                 const onCanPlay = () => {
                                     clearTimeout(timeout);
                                     this.audioPlayer.removeEventListener('canplay', onCanPlay);
                                     this.audioPlayer.removeEventListener('loadeddata', onCanPlay);
-                                    resolve();
+                                    this.audioPlayer.removeEventListener('error', onError);
+
+                                    // Now try to play
+                                    this.audioPlayer.play()
+                                        .then(() => {
+                                            console.log('Auto-play successful after loading');
+                                            this.isPlaying = true;
+                                            this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                                            this.updateMediaSession();
+                                            resolve();
+                                        })
+                                        .catch((error) => {
+                                            console.warn('Auto-play failed after loading:', error);
+                                            reject(error);
+                                        });
                                 };
-                                
+
+                                const onError = (error) => {
+                                    clearTimeout(timeout);
+                                    this.audioPlayer.removeEventListener('canplay', onCanPlay);
+                                    this.audioPlayer.removeEventListener('loadeddata', onCanPlay);
+                                    this.audioPlayer.removeEventListener('error', onError);
+                                    reject(error);
+                                };
+
+                                // Listen for when audio is ready
                                 this.audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
                                 this.audioPlayer.addEventListener('loadeddata', onCanPlay, { once: true });
+                                this.audioPlayer.addEventListener('error', onError, { once: true });
                             }
                         };
-                        
-                        checkReady();
+
+                        // Start the attempt
+                        tryPlay();
                     });
-                
-                    // Now attempt to play
-                    await this.audioPlayer.play();
-                    
-                    // Update UI state only after successful play
-                    this.isPlaying = true;
-                    this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    this.updateMediaSession();
-                    
-                    console.log('Next song auto-play successful');
-                    
+                };
+
+                // Execute the auto-play attempt
+                try {
+                    await attemptAutoPlay();
                 } catch (error) {
-                    console.warn('Auto-play failed:', error);
-                    
+                    console.warn('Auto-play failed, user interaction required:', error.message);
+
                     // Set UI to paused state so user can manually play
                     this.isPlaying = false;
                     this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
                     this.updateMediaSession();
-                    
-                    // Show a subtle indication that user interaction is needed
-                    console.log('Auto-play blocked - user interaction required');
+
+                    // Optional: Show a brief visual indicator that user action is needed
+                    // You could add a subtle animation or notification here
                 }
-            };
-        
-            // Start the play attempt
-            playNext();
-            
-        } else {
-            // Song ended but was paused, keep in paused state
-            this.isPlaying = false;
-            this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-            this.updateMediaSession();
+            } else {
+                // Previous song was paused, keep next song paused
+                this.isPlaying = false;
+                this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                this.updateMediaSession();
+            }
+
+        } catch (error) {
+            console.error('Failed to load next song:', error);
+
+            // Fallback: try to load the next song in sequence
+            if (nextSongIndex < this.songIds.length - 1) {
+                console.log('Trying next song due to load error...');
+                this.currentSongIndex = nextSongIndex;
+
+                // Update shuffle index if needed
+                if (this.isShuffleMode) {
+                    this.shuffleIndex++;
+                }
+
+                // Recursive call to try the next song
+                setTimeout(() => this.handleSongEnd(), 1000);
+            } else {
+                // No more songs to try
+                console.error('No more songs available');
+                this.isPlaying = false;
+                this.playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                this.updateMediaSession();
+                alert('Unable to load the next song. Please check your connection.');
+            }
         }
     }
 
@@ -1188,8 +1266,8 @@ Please add Google Drive file IDs to your CSV file:
             this.lastKnownTime = currentTime;
             this.stuckTimeCount = 0; // Reset stuck counter when time updates
             
-            // Update media session position more frequently for better sync
-            if (Math.floor(currentTime * 2) % 2 === 0) { // Every 0.5 seconds
+            // Update media session position every second
+            if (Math.floor(currentTime) !== Math.floor(this.lastKnownTime)) {
                 this.updateMediaSessionPosition();
             }
             
