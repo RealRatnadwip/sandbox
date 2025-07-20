@@ -449,11 +449,11 @@ Please add Google Drive file IDs to your CSV file:
             this.currentBlobUrl = songData.audioUrl;
             this.audioPlayer.src = songData.audioUrl;
             
-            // Extract metadata from the blob
-            await this.extractMetadataFromBlob(songData.blob);
-            
             // Get file metadata from Google Drive API
             await this.getFileMetadata(songData.fileId);
+            
+            // Extract metadata from the blob
+            await this.extractMetadataFromBlob(songData.blob);
             
             this.hideLoading();
             
@@ -500,9 +500,13 @@ Please add Google Drive file IDs to your CSV file:
                 }
             }
             
-            // Update song info
-            this.songTitle.textContent = title;
-            this.artistName.textContent = artist;
+            // Update song info only if not already set by metadata extraction
+            if (this.songTitle.textContent === 'Unknown Title' || !this.songTitle.textContent.trim()) {
+                this.songTitle.textContent = title;
+            }
+            if (this.artistName.textContent === 'Unknown Artist' || !this.artistName.textContent.trim()) {
+                this.artistName.textContent = artist;
+            }
             
             // Handle artist name scrolling
             this.setupTextScrolling();
@@ -601,10 +605,10 @@ Please add Google Drive file IDs to your CSV file:
                     const { title, artist, picture } = tag.tags;
                     
                     // Update song info only if metadata is available and better than filename
-                    if (title !== null) {
+                    if (title && title.trim()) {
                         this.songTitle.textContent = title;
                     }
-                    if (artist !== null) {
+                    if (artist && artist.trim()) {
                         this.artistName.textContent = artist;
                     }
                     
