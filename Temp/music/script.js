@@ -25,13 +25,31 @@ class MusicPlayer {
 
     updateMediaSession() {
         if ('mediaSession' in navigator) {
+            // Set metadata
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: this.songTitle.textContent || 'Unknown Title',
                 artist: this.artistName.textContent || 'Unknown Artist',
                 artwork: [
-                    { src: this.albumArt.src, sizes: '200x200', type: 'image/jpeg' }
+                    { src: this.albumArt.src, sizes: '96x96', type: 'image/jpeg' },
+                    { src: this.albumArt.src, sizes: '128x128', type: 'image/jpeg' },
+                    { src: this.albumArt.src, sizes: '192x192', type: 'image/jpeg' },
+                    { src: this.albumArt.src, sizes: '256x256', type: 'image/jpeg' },
+                    { src: this.albumArt.src, sizes: '384x384', type: 'image/jpeg' },
+                    { src: this.albumArt.src, sizes: '512x512', type: 'image/jpeg' }
                 ]
             });
+
+            // Set playback state
+            navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
+
+            // Set position state (for progress bar in notification)
+            if (this.audioPlayer.duration) {
+                navigator.mediaSession.setPositionState({
+                    duration: this.audioPlayer.duration,
+                    playbackRate: this.audioPlayer.playbackRate,
+                    position: this.audioPlayer.currentTime
+                });
+            }
         }
     }
 
@@ -87,6 +105,12 @@ class MusicPlayer {
             });
             navigator.mediaSession.setActionHandler('previoustrack', () => this.previousSong());
             navigator.mediaSession.setActionHandler('nexttrack', () => this.nextSong());
+            // Add seek action handler
+            navigator.mediaSession.setActionHandler('seekto', (details) => {
+                if (details.seekTime) {
+                    this.audioPlayer.currentTime = details.seekTime;
+                }
+            });
         }
     }
 
@@ -475,7 +499,8 @@ Please add Google Drive file IDs to your CSV file:
             
             // Extract metadata from the blob
             await this.extractMetadataFromBlob(songData.blob);
-            
+
+            this.updateMediaSession();
             this.hideLoading();
             
         } catch (error) {
@@ -646,6 +671,8 @@ Please add Google Drive file IDs to your CSV file:
                         this.albumArt.src = url;
                         this.albumArtLoaded = true; // Mark album art as loaded
                     }
+
+                    this.updateMediaSession();
                     
                     resolve();
                 },
@@ -811,6 +838,11 @@ Please add Google Drive file IDs to your CSV file:
             this.playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
         this.isPlaying = !this.isPlaying;
+
+        // Update media session playback state
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused';
+        }
     }
 
     toggleMute() {
@@ -843,6 +875,14 @@ Please add Google Drive file IDs to your CSV file:
             if (progressPercent >= 80 && !this.isPreloading) {
                 this.preloadNextSong();
             }
+        }
+
+        if ('mediaSession' in navigator && this.audioPlayer.duration) {
+            navigator.mediaSession.setPositionState({
+                duration: this.audioPlayer.duration,
+                playbackRate: this.audioPlayer.playbackRate,
+                position: this.audioPlayer.currentTime
+            });
         }
     }
 
