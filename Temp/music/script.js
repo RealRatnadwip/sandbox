@@ -849,9 +849,11 @@ Please add Google Drive file IDs to your CSV file:
         if (this.isMuted) {
             this.audioPlayer.muted = false;
             this.muteBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            this.muteBtn.style.background = 'rgba(255, 255, 255, 0.1)';
         } else {
             this.audioPlayer.muted = true;
-            this.muteBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            this.muteBtn.innerHTML = '<i class="fas fa-volume-mute" style="color: #E0F11F;"></i>';
+            this.muteBtn.style.background = 'rgba(224, 241, 31, 0.2)';
         }
         this.isMuted = !this.isMuted;
     }
