@@ -181,38 +181,46 @@ class RDataViewer {
             console.log('Scanning for rMusic/Songs folder...');
             
             // Step 1: Find the "rMusic" folder
+            console.log('Step 1: Searching for rMusic folder...');
             const folderResponse = await gapi.client.drive.files.list({
                 q: "name='rMusic' and mimeType='application/vnd.google-apps.folder' and trashed=false",
                 fields: 'files(id, name)'
             });
             
             if (!folderResponse.result.files || folderResponse.result.files.length === 0) {
+                console.error('rMusic folder not found');
                 throw new Error('RMUSIC_FOLDER_NOT_FOUND');
             }
             
             const rMusicFolderId = folderResponse.result.files[0].id;
-            console.log('Found rMusic folder:', rMusicFolderId);
+            console.log('✅ Found rMusic folder:', rMusicFolderId);
             
             // Step 2: Find the "Songs" folder inside "rMusic"
+            console.log('Step 2: Searching for Songs folder inside rMusic...');
             const songsResponse = await gapi.client.drive.files.list({
                 q: `name='Songs' and mimeType='application/vnd.google-apps.folder' and parents in '${rMusicFolderId}' and trashed=false`,
                 fields: 'files(id, name)'
             });
             
             if (!songsResponse.result.files || songsResponse.result.files.length === 0) {
+                console.error('Songs folder not found inside rMusic');
                 throw new Error('SONGS_FOLDER_NOT_FOUND');
             }
             
             const songsFolderId = songsResponse.result.files[0].id;
-            console.log('Found Songs folder:', songsFolderId);
+            console.log('✅ Found Songs folder:', songsFolderId);
             
             // Step 3: Get all audio files from the Songs folder
+            console.log('Step 3: Scanning for audio files...');
             this.updateLoadingText('Found folders, scanning audio files...');
             
             let allFiles = [];
             let pageToken = null;
+            let pageCount = 0;
             
             do {
+                pageCount++;
+                console.log(`Fetching page ${pageCount} of audio files...`);
                 const filesResponse = await gapi.client.drive.files.list({
                     q: `parents in '${songsFolderId}' and trashed=false and (mimeType contains 'audio' or name contains '.mp3' or name contains '.m4a' or name contains '.wav' or name contains '.flac')`,
                     fields: 'nextPageToken, files(id, name, mimeType)',
@@ -222,24 +230,29 @@ class RDataViewer {
                 
                 if (filesResponse.result.files) {
                     allFiles = allFiles.concat(filesResponse.result.files);
+                    console.log(`Page ${pageCount}: Found ${filesResponse.result.files.length} files (Total: ${allFiles.length})`);
                     this.updateLoadingText(`Found ${allFiles.length} audio files...`);
                 }
                 
                 pageToken = filesResponse.result.nextPageToken;
             } while (pageToken);
             
+            console.log(`✅ Total audio files found: ${allFiles.length}`);
+            
             if (allFiles.length === 0) {
+                console.error('No audio files found in Songs folder');
                 throw new Error('NO_AUDIO_FILES');
             }
             
             // Step 4: Extract metadata from each file
+            console.log('Step 4: Starting metadata extraction...');
             this.updateLoadingText('Extracting metadata from songs...');
             this.songsData = [];
             
             // Process files in batches for better performance
-            await this.processSongsInBatches(allFiles);
+            await this.processSongsProgressively(allFiles);
             
-            console.log(`Processed ${this.songsData.length} songs with metadata`);
+            console.log(`✅ Processing complete! Total songs processed: ${this.songsData.length}`);
             
         } catch (error) {
             console.error('Failed to scan music folder:', error);
@@ -292,24 +305,36 @@ Supported formats: MP3, M4A, WAV, FLAC
         }
     }
 
-    async processSongsInBatches(allFiles) {
+    async processSongsProgressively(allFiles) {
+        console.log(`Starting progressive processing of ${allFiles.length} files...`);
         const batchSize = this.concurrentLimit;
+        let isFirstBatch = true;
         
         for (let i = 0; i < allFiles.length; i += batchSize) {
             const batch = allFiles.slice(i, i + batchSize);
+            const batchNumber = Math.floor(i / batchSize) + 1;
+            const totalBatches = Math.ceil(allFiles.length / batchSize);
+            
+            console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} files)`);
             this.updateLoadingText(`Processing ${i + 1}-${Math.min(i + batchSize, allFiles.length)}/${allFiles.length} songs...`);
             
             // Process batch concurrently
+            console.log(`Starting concurrent processing of batch ${batchNumber}...`);
             const batchPromises = batch.map(file => this.extractFileMetadata(file));
             const batchResults = await Promise.allSettled(batchPromises);
+            
+            let successCount = 0;
+            let failCount = 0;
             
             // Add results to songsData
             batchResults.forEach((result, index) => {
                 const file = batch[index];
                 if (result.status === 'fulfilled') {
                     this.songsData.push(result.value);
+                    successCount++;
                 } else {
-                    console.warn(`Failed to extract metadata for ${file.name}:`, result.reason);
+                    console.warn(`❌ Failed to extract metadata for ${file.name}:`, result.reason);
+                    failCount++;
                     // Add file with basic info even if metadata extraction fails
                     this.songsData.push({
                         title: this.extractTitleFromFilename(file.name),
@@ -321,16 +346,35 @@ Supported formats: MP3, M4A, WAV, FLAC
                 }
             });
             
+            console.log(`✅ Batch ${batchNumber} complete: ${successCount} success, ${failCount} failed`);
+            console.log(`📊 Total processed so far: ${this.songsData.length}/${allFiles.length}`);
+            
+            // Show results after first batch (first ~8 songs)
+            if (isFirstBatch) {
+                console.log('🎉 First batch complete! Showing initial results...');
+                this.hideLoading();
+                this.showResults();
+                isFirstBatch = false;
+            } else {
+                // Update existing results with new songs
+                this.updateResults();
+            }
+            
             // Small delay to prevent overwhelming the browser
             if (i + batchSize < allFiles.length) {
+                console.log(`⏳ Brief pause before next batch...`);
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
+        
+        console.log('🎊 All batches processed! Final update...');
+        this.updateResults();
     }
 
     async extractFileMetadata(file) {
         return new Promise(async (resolve, reject) => {
             try {
+                console.log(`🔍 Extracting metadata for: ${file.name}`);
                 // Download the file to extract metadata
                 const response = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
                     headers: {
@@ -339,25 +383,36 @@ Supported formats: MP3, M4A, WAV, FLAC
                 });
                 
                 if (!response.ok) {
+                    console.error(`❌ HTTP error for ${file.name}: ${response.status} ${response.statusText}`);
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
+                console.log(`📥 Downloaded ${file.name}, size: ${response.headers.get('content-length')} bytes`);
                 const blob = await response.blob();
                 const blobUrl = URL.createObjectURL(blob);
                 this.blobUrls.add(blobUrl); // Track for cleanup
                 
                 // Extract metadata using jsmediatags
+                console.log(`🎵 Reading metadata tags for: ${file.name}`);
                 jsmediatags.read(blob, {
                     onSuccess: (tag) => {
+                        console.log(`✅ Metadata extracted for ${file.name}:`, {
+                            title: tag.tags.title || 'No title',
+                            artist: tag.tags.artist || 'No artist',
+                            hasAlbumArt: !!tag.tags.picture
+                        });
                         const { title, artist, picture } = tag.tags;
                         
                         let albumArt = null;
                         if (picture) {
+                            console.log(`🖼️ Processing album art for: ${file.name}`);
                             const { data, type } = picture;
                             const byteArray = new Uint8Array(data);
                             const albumBlob = new Blob([byteArray], { type });
                             albumArt = URL.createObjectURL(albumBlob);
                             this.blobUrls.add(albumArt); // Track for cleanup
+                        } else {
+                            console.log(`📷 No album art found for: ${file.name}`);
                         }
                         
                         resolve({
@@ -373,12 +428,13 @@ Supported formats: MP3, M4A, WAV, FLAC
                         this.blobUrls.delete(blobUrl);
                     },
                     onError: (error) => {
-                        console.warn('Metadata extraction failed for', file.name, error);
+                        console.warn(`⚠️ Metadata extraction failed for ${file.name}:`, error);
                         // Clean up the blob URL
                         URL.revokeObjectURL(blobUrl);
                         this.blobUrls.delete(blobUrl);
                         
                         // Fallback to filename parsing
+                        console.log(`📝 Using filename parsing for: ${file.name}`);
                         resolve({
                             title: this.extractTitleFromFilename(file.name),
                             artist: this.extractArtistFromFilename(file.name),
@@ -390,8 +446,9 @@ Supported formats: MP3, M4A, WAV, FLAC
                 });
                 
             } catch (error) {
-                console.warn('Failed to download file for metadata extraction:', error);
+                console.warn(`❌ Failed to download ${file.name} for metadata extraction:`, error);
                 // Fallback to filename parsing
+                console.log(`📝 Using filename fallback for: ${file.name}`);
                 resolve({
                     title: this.extractTitleFromFilename(file.name),
                     artist: this.extractArtistFromFilename(file.name),
@@ -430,33 +487,57 @@ Supported formats: MP3, M4A, WAV, FLAC
     }
 
     showResults() {
+        console.log(`📋 Showing results with ${this.songsData.length} songs`);
         // Update file count
         this.fileCount.textContent = `Found ${this.songsData.length} songs`;
         
         // Setup virtual scrolling
+        console.log('🖥️ Setting up virtual scrolling...');
         this.setupVirtualScrolling();
         
         if (this.songsData.length === 0) {
+            console.log('📭 No songs found, showing empty state');
             this.showEmptyState();
         } else {
+            console.log('🎵 Rendering initial visible items...');
             // Render initial visible items
             this.renderVisibleItems();
         }
         
         // Show result section
+        console.log('✅ Result section displayed');
         this.resultSection.style.display = 'block';
     }
 
+    updateResults() {
+        console.log(`🔄 Updating results with ${this.songsData.length} songs`);
+        // Update file count
+        this.fileCount.textContent = `Found ${this.songsData.length} songs`;
+        
+        // Update virtual scrolling height
+        const totalHeight = this.songsData.length * this.itemHeight;
+        if (this.virtualSpace) {
+            this.virtualSpace.style.height = `${totalHeight}px`;
+            console.log(`📏 Updated virtual space height to ${totalHeight}px`);
+        }
+        
+        // Re-render visible items to include new songs
+        this.renderVisibleItems();
+    }
+
     setupVirtualScrolling() {
+        console.log('⚙️ Setting up virtual scrolling container...');
         // Set container height and create virtual space
         this.songsContainer.style.height = `${this.containerHeight}px`;
         this.songsContainer.style.overflowY = 'auto';
         
         // Create virtual space div
         const totalHeight = this.songsData.length * this.itemHeight;
+        console.log(`📐 Virtual space dimensions: ${totalHeight}px height for ${this.songsData.length} items`);
         this.songsContainer.innerHTML = `<div class="virtual-space" style="height: ${totalHeight}px; position: relative;"></div>`;
         
         this.virtualSpace = this.songsContainer.querySelector('.virtual-space');
+        console.log('✅ Virtual scrolling setup complete');
     }
 
     handleScroll() {
@@ -465,6 +546,7 @@ Supported formats: MP3, M4A, WAV, FLAC
         const newEndIndex = Math.min(newStartIndex + this.visibleItems, this.songsData.length);
         
         if (newStartIndex !== this.startIndex || newEndIndex !== this.endIndex) {
+            console.log(`📜 Scroll update: showing items ${newStartIndex}-${newEndIndex} of ${this.songsData.length}`);
             this.startIndex = newStartIndex;
             this.endIndex = newEndIndex;
             this.renderVisibleItems();
@@ -474,6 +556,7 @@ Supported formats: MP3, M4A, WAV, FLAC
     renderVisibleItems() {
         if (!this.virtualSpace) return;
         
+        console.log(`🎨 Rendering visible items ${this.startIndex}-${this.endIndex}`);
         // Clear existing items
         this.virtualSpace.innerHTML = '';
         
@@ -490,6 +573,7 @@ Supported formats: MP3, M4A, WAV, FLAC
             
             this.virtualSpace.appendChild(songCard);
         }
+        console.log(`✅ Rendered ${this.endIndex - this.startIndex} visible items`);
     }
 
     createSongCard(song, index) {
@@ -532,6 +616,7 @@ Supported formats: MP3, M4A, WAV, FLAC
 
     async exportData() {
         try {
+            console.log(`📤 Starting export of ${this.songsData.length} songs...`);
             // Create export data
             const exportData = this.songsData.map(song => ({
                 title: song.title,
@@ -541,9 +626,11 @@ Supported formats: MP3, M4A, WAV, FLAC
                 // Note: albumArt URLs are not exported as they're temporary blob URLs
             }));
             
+            console.log('📝 Converting to JSON...');
             // Convert to JSON
             const jsonData = JSON.stringify(exportData, null, 2);
             
+            console.log(`💾 Creating download file (${jsonData.length} characters)...`);
             // Create and download file
             const blob = new Blob([jsonData], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -556,6 +643,7 @@ Supported formats: MP3, M4A, WAV, FLAC
             document.body.removeChild(a);
             
             URL.revokeObjectURL(url);
+            console.log('✅ Export completed successfully');
             
             // Update button to show success
             const originalText = this.exportButton.innerHTML;
@@ -569,18 +657,19 @@ Supported formats: MP3, M4A, WAV, FLAC
             }, 2000);
             
         } catch (error) {
-            console.error('Failed to export data:', error);
+            console.error('❌ Failed to export data:', error);
             alert('Failed to export data. Please try again.');
         }
     }
 
     cleanup() {
+        console.log(`🧹 Cleaning up ${this.blobUrls.size} blob URLs...`);
         // Clean up all blob URLs to free memory
         this.blobUrls.forEach(url => {
             URL.revokeObjectURL(url);
         });
         this.blobUrls.clear();
-        console.log('Cleaned up blob URLs');
+        console.log('✅ Cleanup completed');
     }
 
     updateLoadingText(text) {
