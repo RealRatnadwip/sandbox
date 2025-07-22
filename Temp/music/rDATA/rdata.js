@@ -5,6 +5,16 @@ class RDataViewer {
         this.tokenClient = null;
         this.isGoogleAPIReady = false;
         this.songsData = [];
+        this.concurrentLimit = 8; // Process 8 files simultaneously
+        this.blobUrls = new Set(); // Track blob URLs for cleanup
+        
+        // Virtual scrolling properties
+        this.itemHeight = 120; // Height of each song card
+        this.containerHeight = 500; // Height of scrollable container
+        this.visibleItems = Math.ceil(this.containerHeight / this.itemHeight) + 2; // Buffer items
+        this.scrollTop = 0;
+        this.startIndex = 0;
+        this.endIndex = this.visibleItems;
         
         this.initializeElements();
         this.setupEventListeners();
@@ -31,6 +41,12 @@ class RDataViewer {
     setupEventListeners() {
         this.authButton.addEventListener('click', () => this.handleAuthClick());
         this.exportButton.addEventListener('click', () => this.exportData());
+        
+        // Add scroll listener for virtual scrolling
+        this.songsContainer.addEventListener('scroll', () => this.handleScroll());
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => this.cleanup());
     }
 
     async initializeGoogleAPI() {
@@ -220,24 +236,8 @@ class RDataViewer {
             this.updateLoadingText('Extracting metadata from songs...');
             this.songsData = [];
             
-            for (let i = 0; i < allFiles.length; i++) {
-                const file = allFiles[i];
-                this.updateLoadingText(`Processing ${i + 1}/${allFiles.length}: ${file.name}`);
-                
-                try {
-                    const metadata = await this.extractFileMetadata(file);
-                    this.songsData.push(metadata);
-                } catch (error) {
-                    console.warn(`Failed to extract metadata for ${file.name}:`, error);
-                    // Add file with basic info even if metadata extraction fails
-                    this.songsData.push({
-                        title: this.extractTitleFromFilename(file.name),
-                        artist: 'Unknown Artist',
-                        fileId: file.id,
-                        fileName: file.name
-                    });
-                }
-            }
+            // Process files in batches for better performance
+            await this.processSongsInBatches(allFiles);
             
             console.log(`Processed ${this.songsData.length} songs with metadata`);
             
@@ -292,6 +292,42 @@ Supported formats: MP3, M4A, WAV, FLAC
         }
     }
 
+    async processSongsInBatches(allFiles) {
+        const batchSize = this.concurrentLimit;
+        
+        for (let i = 0; i < allFiles.length; i += batchSize) {
+            const batch = allFiles.slice(i, i + batchSize);
+            this.updateLoadingText(`Processing ${i + 1}-${Math.min(i + batchSize, allFiles.length)}/${allFiles.length} songs...`);
+            
+            // Process batch concurrently
+            const batchPromises = batch.map(file => this.extractFileMetadata(file));
+            const batchResults = await Promise.allSettled(batchPromises);
+            
+            // Add results to songsData
+            batchResults.forEach((result, index) => {
+                const file = batch[index];
+                if (result.status === 'fulfilled') {
+                    this.songsData.push(result.value);
+                } else {
+                    console.warn(`Failed to extract metadata for ${file.name}:`, result.reason);
+                    // Add file with basic info even if metadata extraction fails
+                    this.songsData.push({
+                        title: this.extractTitleFromFilename(file.name),
+                        artist: 'Unknown Artist',
+                        albumArt: null,
+                        fileId: file.id,
+                        fileName: file.name
+                    });
+                }
+            });
+            
+            // Small delay to prevent overwhelming the browser
+            if (i + batchSize < allFiles.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+    }
+
     async extractFileMetadata(file) {
         return new Promise(async (resolve, reject) => {
             try {
@@ -307,25 +343,46 @@ Supported formats: MP3, M4A, WAV, FLAC
                 }
                 
                 const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                this.blobUrls.add(blobUrl); // Track for cleanup
                 
                 // Extract metadata using jsmediatags
                 jsmediatags.read(blob, {
                     onSuccess: (tag) => {
-                        const { title, artist } = tag.tags;
+                        const { title, artist, picture } = tag.tags;
+                        
+                        let albumArt = null;
+                        if (picture) {
+                            const { data, type } = picture;
+                            const byteArray = new Uint8Array(data);
+                            const albumBlob = new Blob([byteArray], { type });
+                            albumArt = URL.createObjectURL(albumBlob);
+                            this.blobUrls.add(albumArt); // Track for cleanup
+                        }
                         
                         resolve({
                             title: title || this.extractTitleFromFilename(file.name),
                             artist: artist || 'Unknown Artist',
+                            albumArt: albumArt,
                             fileId: file.id,
                             fileName: file.name
                         });
+                        
+                        // Clean up the blob URL used for metadata extraction
+                        URL.revokeObjectURL(blobUrl);
+                        this.blobUrls.delete(blobUrl);
                     },
                     onError: (error) => {
                         console.warn('Metadata extraction failed for', file.name, error);
+                        // Clean up the blob URL
+                        URL.revokeObjectURL(blobUrl);
+                        this.blobUrls.delete(blobUrl);
+                        
                         // Fallback to filename parsing
                         resolve({
                             title: this.extractTitleFromFilename(file.name),
                             artist: this.extractArtistFromFilename(file.name),
+                            albumArt: null,
                             fileId: file.id,
                             fileName: file.name
                         });
@@ -338,6 +395,7 @@ Supported formats: MP3, M4A, WAV, FLAC
                 resolve({
                     title: this.extractTitleFromFilename(file.name),
                     artist: this.extractArtistFromFilename(file.name),
+                    albumArt: null,
                     fileId: file.id,
                     fileName: file.name
                 });
@@ -375,32 +433,81 @@ Supported formats: MP3, M4A, WAV, FLAC
         // Update file count
         this.fileCount.textContent = `Found ${this.songsData.length} songs`;
         
-        // Clear container
-        this.songsContainer.innerHTML = '';
+        // Setup virtual scrolling
+        this.setupVirtualScrolling();
         
         if (this.songsData.length === 0) {
             this.showEmptyState();
         } else {
-            // Create song cards
-            this.songsData.forEach((song, index) => {
-                const songCard = this.createSongCard(song, index + 1);
-                this.songsContainer.appendChild(songCard);
-            });
+            // Render initial visible items
+            this.renderVisibleItems();
         }
         
         // Show result section
         this.resultSection.style.display = 'block';
     }
 
+    setupVirtualScrolling() {
+        // Set container height and create virtual space
+        this.songsContainer.style.height = `${this.containerHeight}px`;
+        this.songsContainer.style.overflowY = 'auto';
+        
+        // Create virtual space div
+        const totalHeight = this.songsData.length * this.itemHeight;
+        this.songsContainer.innerHTML = `<div class="virtual-space" style="height: ${totalHeight}px; position: relative;"></div>`;
+        
+        this.virtualSpace = this.songsContainer.querySelector('.virtual-space');
+    }
+
+    handleScroll() {
+        this.scrollTop = this.songsContainer.scrollTop;
+        const newStartIndex = Math.floor(this.scrollTop / this.itemHeight);
+        const newEndIndex = Math.min(newStartIndex + this.visibleItems, this.songsData.length);
+        
+        if (newStartIndex !== this.startIndex || newEndIndex !== this.endIndex) {
+            this.startIndex = newStartIndex;
+            this.endIndex = newEndIndex;
+            this.renderVisibleItems();
+        }
+    }
+
+    renderVisibleItems() {
+        if (!this.virtualSpace) return;
+        
+        // Clear existing items
+        this.virtualSpace.innerHTML = '';
+        
+        // Render only visible items
+        for (let i = this.startIndex; i < this.endIndex; i++) {
+            if (i >= this.songsData.length) break;
+            
+            const song = this.songsData[i];
+            const songCard = this.createSongCard(song, i + 1);
+            songCard.style.position = 'absolute';
+            songCard.style.top = `${i * this.itemHeight}px`;
+            songCard.style.width = '100%';
+            songCard.style.height = `${this.itemHeight - 12}px`; // Account for margin
+            
+            this.virtualSpace.appendChild(songCard);
+        }
+    }
+
     createSongCard(song, index) {
         const card = document.createElement('div');
         card.className = 'song-card';
         
+        const albumArtSrc = song.albumArt || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjMzMzIi8+CjxwYXRoIGQ9Ik00MCAyMEw2MCA0MEw0MCA2MEwyMCA0MEw0MCAyMFoiIGZpbGw9IiNFMEYxMUYiLz4KPC9zdmc+";
+        
         card.innerHTML = `
-            <div class="song-info">
-                <h4 class="song-title">${this.escapeHtml(song.title)}</h4>
-                <p class="song-artist">${this.escapeHtml(song.artist)}</p>
-                <div class="song-file-id">${song.fileId}</div>
+            <div class="song-card-content">
+                <div class="album-art-container">
+                    <img src="${albumArtSrc}" alt="Album Art" class="album-art" loading="lazy">
+                </div>
+                <div class="song-info">
+                    <h4 class="song-title">${this.escapeHtml(song.title)}</h4>
+                    <p class="song-artist">${this.escapeHtml(song.artist)}</p>
+                    <div class="song-file-id">${song.fileId}</div>
+                </div>
             </div>
         `;
         
@@ -431,6 +538,7 @@ Supported formats: MP3, M4A, WAV, FLAC
                 artist: song.artist,
                 fileId: song.fileId,
                 fileName: song.fileName
+                // Note: albumArt URLs are not exported as they're temporary blob URLs
             }));
             
             // Convert to JSON
@@ -464,6 +572,15 @@ Supported formats: MP3, M4A, WAV, FLAC
             console.error('Failed to export data:', error);
             alert('Failed to export data. Please try again.');
         }
+    }
+
+    cleanup() {
+        // Clean up all blob URLs to free memory
+        this.blobUrls.forEach(url => {
+            URL.revokeObjectURL(url);
+        });
+        this.blobUrls.clear();
+        console.log('Cleaned up blob URLs');
     }
 
     updateLoadingText(text) {
