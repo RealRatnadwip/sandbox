@@ -19,6 +19,12 @@ body * {
   outline: none !important;
 }
 
+button * {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;    /* IE 10+ */
+  user-select: none;        /* Standard syntax */
+}
+
 html, body {
   overflow: auto;
   scrollbar-width: none;        /* Firefox */
