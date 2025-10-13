@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>C Language Concepts Explorer</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Chosen Palette: Neon Dark -->
     <!-- Application Structure Plan: The application is structured as a single-page app with a persistent sidebar for navigation and a main content area that dynamically displays information. This was chosen over a linear document to allow users non-linear access to topics, making it ideal for both initial learning and later reference. The structure is thematic: 'Overview', 'Language Evolution', 'Core Concepts', 'Control Structures', and 'Best Practices'. This grouping helps users build a mental model of the C language from high-level concepts down to specific syntax. Interactivity is introduced through clickable navigation, an interactive timeline for language generations, and expandable sections for code examples, reducing cognitive load and encouraging exploration. -->
     <!-- Visualization & Content Choices: 
         - Report Info: 3GL, 4GL, 5GL, etc. -> Goal: Show historical progression. -> Viz/Presentation Method: Interactive horizontal timeline diagram. -> Interaction: Clicking a generation reveals a detailed card. -> Justification: A visual timeline is more intuitive for showing sequence and evolution than a simple text list. -> Library/Method: HTML/CSS (Tailwind)/JS.
@@ -15,13 +15,13 @@
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         :root {
-            --bg-main: #121212; /* A warm, light gray */
-            --bg-sidebar: #1E1E1E;
-            --text-primary: #F0F0F0; /* Dark Gray */
-            --text-secondary: ##808080; /* Medium Gray */
-            --accent: #E0F11F; /* Amber */
-            --accent-hover: #e3f054;
-            --border-color: #E5E7EB;
+            --bg-main: #121212;
+            --bg-secondary: #1E1E1E;
+            --text-primary: #F0F0F0;
+            --text-secondary: #808080;
+            --accent: #E0F11F;
+            --accent-hover: #c8d61c;
+            --border-color: #2c2c2c;
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -30,12 +30,16 @@
         }
         .sidebar-link.active {
             background-color: var(--accent);
-            color: white;
+            color: #121212;
             font-weight: 600;
         }
+        .sidebar-link:hover:not(.active) {
+            background-color: var(--border-color);
+        }
         .code-block {
-            background-color: #1E1E1E;
+            background-color: #111111;
             color: #D4D4D4;
+            border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             padding: 1rem;
             font-family: 'Courier New', Courier, monospace;
@@ -60,7 +64,7 @@
             width: 1.25rem;
             height: 1.25rem;
             border-radius: 50%;
-            background-color: var(--bg-sidebar);
+            background-color: var(--bg-secondary);
             border: 3px solid var(--accent);
             cursor: pointer;
             transition: all 0.3s ease;
@@ -77,9 +81,6 @@
             background-color: var(--border-color);
             transform: translateX(-50%);
         }
-        .timeline-content {
-            padding: 0 1rem;
-        }
         .timeline-item:nth-child(odd) .timeline-content { text-align: right; }
         .timeline-item:nth-child(even) .timeline-content { text-align: left; }
     </style>
@@ -89,31 +90,31 @@
 </head>
 <body class="antialiased">
 
-    <div class="flex h-screen bg-gray-100">
+    <div class="flex h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-lg flex flex-col" id="sidebar">
-            <div class="p-6 border-b border-gray-200">
-                <h1 class="text-2xl font-bold text-gray-800">C Language</h1>
-                <p class="text-sm text-gray-500">Concepts Explorer</p>
+        <aside class="w-64 bg-[#1E1E1E] flex flex-col" id="sidebar">
+            <div class="p-6 border-b border-[#2c2c2c]">
+                <h1 class="text-2xl font-bold text-[#F0F0F0]">C Language</h1>
+                <p class="text-sm text-[#808080]">Concepts Explorer</p>
             </div>
             <nav class="flex-1 px-4 py-6 space-y-2">
-                <a href="#" data-section="overview" class="sidebar-link flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 hover:bg-amber-500 hover:text-white active">
+                <a href="#" data-section="overview" class="sidebar-link flex items-center px-4 py-2 text-[#F0F0F0] rounded-lg transition-colors duration-200 active">
                     <span class="mx-4 font-medium">Overview of C</span>
                 </a>
-                <a href="#" data-section="evolution" class="sidebar-link flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 hover:bg-amber-500 hover:text-white">
+                <a href="#" data-section="evolution" class="sidebar-link flex items-center px-4 py-2 text-[#F0F0F0] rounded-lg transition-colors duration-200">
                     <span class="mx-4 font-medium">Language Evolution</span>
                 </a>
-                <a href="#" data-section="concepts" class="sidebar-link flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 hover:bg-amber-500 hover:text-white">
+                <a href="#" data-section="concepts" class="sidebar-link flex items-center px-4 py-2 text-[#F0F0F0] rounded-lg transition-colors duration-200">
                     <span class="mx-4 font-medium">Core Concepts</span>
                 </a>
-                <a href="#" data-section="controls" class="sidebar-link flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 hover:bg-amber-500 hover:text-white">
+                <a href="#" data-section="controls" class="sidebar-link flex items-center px-4 py-2 text-[#F0F0F0] rounded-lg transition-colors duration-200">
                     <span class="mx-4 font-medium">Control Structures</span>
                 </a>
-                <a href="#" data-section="practices" class="sidebar-link flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 hover:bg-amber-500 hover:text-white">
+                <a href="#" data-section="practices" class="sidebar-link flex items-center px-4 py-2 text-[#F0F0F0] rounded-lg transition-colors duration-200">
                     <span class="mx-4 font-medium">Best Practices</span>
                 </a>
             </nav>
-            <div class="p-4 border-t border-gray-200 text-center text-xs text-gray-400">
+            <div class="p-4 border-t border-[#2c2c2c] text-center text-xs text-[#808080]">
                 <p>&copy; 2025 C Explorer</p>
             </div>
         </aside>
@@ -135,7 +136,7 @@
                     cards: [
                         {
                             title: "Language Classification",
-                            content: "C is classified as a <strong>procedural, compiled, middle-level language</strong>. <ul><li class='mt-2'><strong>Procedural:</strong> Programs are built from procedures, also known as functions or subroutines.</li><li class='mt-2'><strong>Compiled:</strong> Source code is translated into machine code by a compiler before it can be run, resulting in fast execution.</li><li class='mt-2'><strong>Middle-Level:</strong> It bridges the gap between high-level languages (like Python) and low-level languages (like Assembly), providing high-level abstractions while also allowing direct memory access.</li></ul>"
+                            content: "C is classified as a <strong>procedural, compiled, middle-level language</strong>. <ul class='list-disc list-inside mt-2 space-y-2'><li class='mt-2'><strong>Procedural:</strong> Programs are built from procedures, also known as functions or subroutines.</li><li class='mt-2'><strong>Compiled:</strong> Source code is translated into machine code by a compiler before it can be run, resulting in fast execution.</li><li class='mt-2'><strong>Middle-Level:</strong> It bridges the gap between high-level languages (like Python) and low-level languages (like Assembly), providing high-level abstractions while also allowing direct memory access.</li></ul>"
                         }
                     ]
                 },
@@ -209,19 +210,19 @@
                 if (!section) return;
 
                 let html = `<div class="space-y-8">`;
-                html += `<h2 class="text-4xl font-bold text-gray-800 border-b-4 border-amber-500 pb-2">${section.title}</h2>`;
-                html += `<p class="text-lg text-gray-600">${section.intro}</p>`;
+                html += `<h2 class="text-4xl font-bold text-[#F0F0F0] border-b-4 border-[#E0F11F] pb-2">${section.title}</h2>`;
+                html += `<p class="text-lg text-[#808080]">${section.intro}</p>`;
                 
                 if (section.cards) {
                     section.cards.forEach(card => {
                         html += `
-                            <div class="bg-white p-6 rounded-lg shadow-md transition-shadow duration-300 hover:shadow-xl">
-                                <h3 class="text-2xl font-semibold text-gray-700 mb-4">${card.title}</h3>
-                                <div class="text-gray-600 leading-relaxed">${card.content}</div>
+                            <div class="bg-[#1E1E1E] p-6 rounded-lg border border-[#2c2c2c] transition-all duration-300 hover:border-[#E0F11F]">
+                                <h3 class="text-2xl font-semibold text-[#F0F0F0] mb-4">${card.title}</h3>
+                                <div class="text-[#808080] leading-relaxed">${card.content.replace(/<strong>/g, '<strong class=\"text-[#F0F0F0]\">').replace(/<code>/g, '<code class=\"text-[#E0F11F] bg-black/50 px-1 rounded\">')}</div>
                                 ${card.code ? `
                                     <div class="mt-4 relative">
                                         <div class="code-block">${card.code}</div>
-                                        <button class="copy-btn absolute top-2 right-2 bg-gray-600 hover:bg-gray-500 text-white text-xs font-bold py-1 px-2 rounded transition-colors duration-200">Copy</button>
+                                        <button class="copy-btn absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold py-1 px-2 rounded transition-colors duration-200">Copy</button>
                                     </div>
                                 ` : ''}
                             </div>
@@ -230,15 +231,15 @@
                 }
                 
                 if (section.timeline) {
-                    html += `<div class="bg-white p-6 rounded-lg shadow-md transition-shadow duration-300 hover:shadow-xl">`;
+                    html += `<div class="bg-[#1E1E1E] p-6 rounded-lg border border-[#2c2c2c]">`;
                     html += `<div class="relative">`;
                     section.timeline.forEach((item, index) => {
                          html += `
                            <div class="timeline-item flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}">
                                <div class="w-1/2 ${index % 2 === 0 ? 'pr-8' : 'pl-8'}">
                                    <div class="timeline-content">
-                                       <h4 class="font-bold text-amber-600">${item.gen} - ${item.title}</h4>
-                                       <p class="text-sm text-gray-600 mt-1">${item.description}</p>
+                                       <h4 class="font-bold text-[#E0F11F]">${item.gen} - ${item.title}</h4>
+                                       <p class="text-sm text-[#808080] mt-1">${item.description}</p>
                                    </div>
                                </div>
                                ${index < section.timeline.length - 1 ? '<div class="timeline-line"></div>' : ''}
@@ -252,15 +253,15 @@
                 if (section.accordions) {
                     section.accordions.forEach((item, index) => {
                         html += `
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden accordion-item">
-                            <button class="accordion-header w-full text-left p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-                                <span class="text-lg font-semibold text-gray-700">${item.title}</span>
+                        <div class="bg-[#1E1E1E] rounded-lg border border-[#2c2c2c] overflow-hidden accordion-item">
+                            <button class="accordion-header w-full text-left p-4 flex justify-between items-center hover:bg-[#2c2c2c] transition-colors duration-200">
+                                <span class="text-lg font-semibold text-[#F0F0F0]">${item.title}</span>
                                 <span class="transform transition-transform duration-300">
-                                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <svg class="w-6 h-6 text-[#E0F11F]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </span>
                             </button>
                             <div class="accordion-content max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
-                                <p class="p-4 pt-0 text-gray-600">${item.content}</p>
+                                <p class="p-4 pt-0 text-[#808080]">${item.content}</p>
                             </div>
                         </div>
                         `;
