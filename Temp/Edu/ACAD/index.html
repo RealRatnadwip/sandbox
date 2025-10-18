@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide to AutoCAD Polyline & Arc Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Custom Dark Mode (Cyber Lime) -->
+    <!-- Application Structure Plan: A single-page, vertically scrolling guide divided into thematic sections (Introduction, Polyline, Arc in Polyline, Standalone Arc, Editing). This linear, tutorial-style structure is the most intuitive for a learning guide, allowing users to build knowledge progressively from basic to advanced concepts. Interactive tabs within each section will reveal step-by-step instructions, keeping the UI clean and focused. The user flow is top-to-bottom, mimicking a standard tutorial document but enhanced with interactive reveals for clarity and engagement. -->
+    <!-- Visualization & Content Choices: The content is instructional text. The primary 'visualization' will be through structured HTML/CSS diagrams that mimic the AutoCAD command line and drawing process. Report Info: Step-by-step instructions -> Goal: Teach a process -> Presentation Method: Interactive, tabbed content blocks and styled 'command line' divs -> Interaction: User clicks on tabs to reveal steps for a specific tool or example -> Justification: Breaks down complex processes into manageable chunks, preventing information overload and allowing self-paced learning. This is more engaging than a static text wall. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #F0F0F0;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .command-line {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #121212;
+            color: #808080;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #E0F11F;
+        }
+        .command-input {
+            color: #F0F0F0;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 0.5rem;
+            margin-bottom: -2px;
+        }
+        .tab-button.active {
+            border-bottom-color: #E0F11F;
+            color: #E0F11F;
+        }
+        .content-card {
+            background-color: #1E1E1E;
+            border: 1px solid #2d2d2d;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-12 md:mb-16">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#F0F0F0] tracking-tight">Polylines & Arcs</h1>
+            <p class="text-lg text-[#808080] mt-2">An Interactive Guide for AutoCAD 2015</p>
+        </header>
+
+        <main class="space-y-12">
+
+            <section id="polyline" class="content-card p-6 md:p-8">
+                <div class="flex items-center mb-4">
+                    <div class="bg-[#E0F11F] text-black rounded-full h-10 w-10 flex items-center justify-center font-bold text-xl mr-4 flex-shrink-0">1</div>
+                    <h2 class="text-3xl font-bold text-[#F0F0F0]">The Power of the Polyline (PLINE)</h2>
+                </div>
+                <p class="mb-6 text-[#808080]">A Polyline is a sequence of connected line or arc segments treated as a single object. This is ideal for creating complex outlines that you can easily select, move, or offset as one entity. Think of it as drawing a complete shape without lifting your pen.</p>
+                
+                <div class="bg-[#121212] p-6 rounded-lg border border-gray-800">
+                    <h3 class="font-bold text-lg mb-4 text-[#F0F0F0]">How to Use the PLINE Command</h3>
+                    <div class="command-line mb-4">
+                        <p>&gt; Command: <span class="command-input">PLINE</span> (or PL)</p>
+                    </div>
+                    <div class="text-[#F0F0F0] space-y-2">
+                        <p><span class="font-semibold text-[#E0F11F]">1. Start the Command:</span> Type <code class="bg-gray-700 text-gray-200 px-2 py-0.5 rounded">PLINE</code> and press Enter.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">2. Specify Start Point:</span> Click anywhere in your drawing area to set the first point.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">3. Specify Next Point:</span> Click to define the end of the first segment. AutoCAD will prompt for the next point, allowing you to continue drawing.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">4. Close or End:</span> Press <code class="bg-gray-700 text-gray-200 px-2 py-0.5 rounded">Enter</code> to end, or type <code class="bg-gray-700 text-gray-200 px-2 py-0.5 rounded">C</code> and Enter to draw a final segment back to the start point, creating a closed object.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="arc-in-polyline" class="content-card p-6 md:p-8">
+                <div class="flex items-center mb-4">
+                    <div class="bg-[#E0F11F] text-black rounded-full h-10 w-10 flex items-center justify-center font-bold text-xl mr-4 flex-shrink-0">2</div>
+                    <h2 class="text-3xl font-bold text-[#F0F0F0]">Integrating Arcs into a Polyline</h2>
+                </div>
+                <p class="mb-6 text-[#808080]">This is the most efficient way to create objects with both straight and curved edges. While inside the `PLINE` command, you can seamlessly switch between drawing lines and arcs.</p>
+
+                <div id="keyhole-tabs" class="mb-4 border-b border-gray-800 flex space-x-4">
+                    <button class="tab-button font-semibold text-[#808080] active" onclick="showTab('keyhole', 'diagram')">Visual Diagram</button>
+                    <button class="tab-button font-semibold text-[#808080]" onclick="showTab('keyhole', 'steps')">Step-by-Step</button>
+                </div>
+
+                <div id="keyhole-content">
+                    <div id="diagram-keyhole-content" class="tab-content bg-[#121212] p-6 rounded-lg border border-gray-800">
+                        <h3 class="font-bold text-lg mb-4 text-center text-[#F0F0F0]">Example: Drawing a Keyhole Shape</h3>
+                        <div class="flex flex-col items-center justify-center space-y-2 font-mono p-4">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-[#E0F11F] text-black text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">1</span>
+                                <span class="text-[#F0F0F0]">Start PLINE</span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-600"></div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-700 text-gray-200 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">2</span>
+                                <span class="text-[#F0F0F0]">Draw LINE segment</span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-600"></div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-700 text-gray-200 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">3</span>
+                                <span class="text-[#F0F0F0]">Switch to ARC mode ('A')</span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-600"></div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-700 text-gray-200 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">4</span>
+                                <span class="text-[#F0F0F0]">Draw ARC segment</span>
+                            </div>
+                            <div class="w-px h-8 bg-gray-600"></div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-700 text-gray-200 text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">5</span>
+                                <span class="text-[#F0F0F0]">Switch to LINE mode ('L')</span>
+                            </div>
+                             <div class="w-px h-8 bg-gray-600"></div>
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-[#E0F11F] text-black text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full">6</span>
+                                <span class="text-[#F0F0F0]">CLOSE shape ('C')</span>
+                            </div>
+                        </div>
+                        <p class="text-center text-sm text-[#808080] mt-4">This diagram shows the command flow for creating the shape.</p>
+                    </div>
+
+                    <div id="steps-keyhole-content" class="tab-content hidden bg-[#121212] p-6 rounded-lg border border-gray-800">
+                         <div class="space-y-4 text-[#F0F0F0]">
+                            <p><span class="font-semibold text-[#E0F11F]">1. Start & Draw Base:</span> Begin `PLINE`, click a start point, move right, type `50` and press Enter.</p>
+                            <p><span class="font-semibold text-[#E0F11F]">2. Draw Right Side:</span> Move cursor up, type `50` and press Enter.</p>
+                            <div class="command-line">
+                                <p>Specify next point or [Arc/...]: <span class="command-input">A</span></p>
+                            </div>
+                            <p><span class="font-semibold text-[#E0F11F]">3. Switch to Arc Mode:</span> Type `A` and press Enter.</p>
+                            <p><span class="font-semibold text-[#E0F11F]">4. Create the Top Arc:</span> Move your cursor 50 units to the left (above the start point) and click. This completes the semi-circle.</p>
+                            <div class="command-line">
+                                <p>Specify endpoint of arc or [.../Line/...]: <span class="command-input">L</span></p>
+                            </div>
+                            <p><span class="font-semibold text-[#E0F11F]">5. Switch back to Line Mode:</span> Type `L` and press Enter.</p>
+                             <div class="command-line">
+                                <p>Specify next point or [.../Close/...]: <span class="command-input">C</span></p>
+                            </div>
+                            <p><span class="font-semibold text-[#E0F11F]">6. Close the Shape:</span> Type `C` and press Enter to draw the final line segment back to the start.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="arc" class="content-card p-6 md:p-8">
+                 <div class="flex items-center mb-4">
+                    <div class="bg-[#E0F11F] text-black rounded-full h-10 w-10 flex items-center justify-center font-bold text-xl mr-4 flex-shrink-0">3</div>
+                    <h2 class="text-3xl font-bold text-[#F0F0F0]">The Standalone ARC Command</h2>
+                </div>
+                <p class="mb-6 text-[#808080]">For times you need a single arc not part of a polyline. AutoCAD offers many ways to define an arc based on the information you have (e.g., start/end points, center, radius, angle).</p>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-[#121212] p-6 rounded-lg border border-gray-800">
+                        <h3 class="font-bold text-lg mb-2 text-[#F0F0F0]">Accessing the ARC tool</h3>
+                        <div class="command-line mb-4">
+                            <p>&gt; Command: <span class="command-input">ARC</span> (or A)</p>
+                        </div>
+                        <p class="text-[#808080]">Find it on the Ribbon: <strong>Home tab > Draw panel > Arc</strong>.</p>
+                    </div>
+                    <div class="bg-[#121212] p-6 rounded-lg border border-gray-800">
+                        <h3 class="font-bold text-lg mb-2 text-[#F0F0F0]">Common Creation Methods</h3>
+                        <ul class="list-disc list-inside text-[#808080] space-y-1">
+                            <li><strong class="text-gray-400">3-Point (Default):</strong> Click three points.</li>
+                            <li><strong class="text-gray-400">Start, Center, End:</strong> Define by start, center, and end points.</li>
+                            <li><strong class="text-gray-400">Start, End, Radius:</strong> Define by start, end, and a radius.</li>
+                            <li><strong class="text-gray-400">Start, End, Angle:</strong> Define using start, end, and included angle.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="pedit" class="content-card p-6 md:p-8">
+                <div class="flex items-center mb-4">
+                    <div class="bg-[#E0F11F] text-black rounded-full h-10 w-10 flex items-center justify-center font-bold text-xl mr-4 flex-shrink-0">4</div>
+                    <h2 class="text-3xl font-bold text-[#F0F0F0]">Pro-Tip: Editing & Joining (PEDIT)</h2>
+                </div>
+                <p class="mb-6 text-[#808080]">Combine separate, end-to-end lines and arcs into a single polyline with the powerful `PEDIT` (Polyline Edit) command. This is essential for cleaning up drawings.</p>
+                
+                <div class="bg-[#121212] p-6 rounded-lg border border-gray-800">
+                    <h3 class="font-bold text-lg mb-4 text-[#F0F0F0]">How to Join Objects into a Polyline</h3>
+                    <div class="command-line mb-4">
+                        <p>&gt; Command: <span class="command-input">PEDIT</span></p>
+                    </div>
+                     <div class="space-y-3 text-[#F0F0F0]">
+                        <p><span class="font-semibold text-[#E0F11F]">1. Start Command:</span> Type `PEDIT` and press Enter.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">2. Select Object:</span> Click one line/arc. If it's not a polyline, AutoCAD will ask to convert it. Press Enter to accept.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">3. Choose Join Option:</span> Type `J` for Join and press Enter.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">4. Select Objects to Join:</span> Select all other lines and arcs to combine.</p>
+                        <p><span class="font-semibold text-[#E0F11F]">5. Finish:</span> Press Enter twice to complete. Your separate objects are now a single, unified polyline!</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+        
+        <footer class="text-center mt-12 md:mt-16 py-6 border-t border-gray-800">
+            <p class="text-[#808080]">&copy; 2025 Ratnadwip Sarkar</p>
+        </footer>
+    </div>
+
+    <script>
+        function showTab(containerId, tabId) {
+            const container = document.getElementById(containerId + '-content');
+            const tabs = document.getElementById(containerId + '-tabs');
+            
+            container.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            tabs.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabId + '-' + containerId + '-content').classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
+
