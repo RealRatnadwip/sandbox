@@ -1,3 +1,8 @@
+:root {
+  --accent-main: #1DB954;
+  --accent-secondary: #1ED760;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -56,7 +61,7 @@ body::-webkit-scrollbar {
     font-weight: 900;
     font-size: 2.5rem;
     margin-bottom: 20px;
-    color: #E0F11F;
+    color: var(--accent-main);
 }
 
 .auth-section p {
@@ -66,7 +71,7 @@ body::-webkit-scrollbar {
 }
 
 .auth-btn {
-    background: #E0F11F;
+    background: var(--accent-main);
     color: #121212;
     border: none;
     padding: 12px 24px;
@@ -82,7 +87,7 @@ body::-webkit-scrollbar {
 }
 
 .auth-btn:hover {
-    background: #d4e51b;
+    background: var(--accent-secondary);
     transform: translateY(-2px);
 }
 
@@ -171,7 +176,7 @@ body::-webkit-scrollbar {
     font-family: 'Big Shoulders Display', cursive;
     font-weight: 700;
     font-size: 1.8rem;
-    color: #E0F11F;
+    color: var(--accent-main);
     text-align: left;
     line-height: 1.2;
     margin: 0;
@@ -274,13 +279,13 @@ body::-webkit-scrollbar {
     min-height: 56px;
     width: 56px;
     height: 56px;
-    background: #E0F11F;
+    background: var(--accent-main);
     color: #121212;
     font-size: 18px;
 }
 
 .play-btn:hover {
-    background: #d4e51b;
+    background: var(--accent-secondary);
 }
 
 /* Progress Bar */
@@ -300,7 +305,7 @@ body::-webkit-scrollbar {
 
 .progress-fill {
     height: 100%;
-    background: #E0F11F;
+    background: var(--accent-main);
     width: 0%;
     transition: width 0.1s ease;
 }
@@ -322,8 +327,8 @@ body::-webkit-scrollbar {
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(224, 241, 31, 0.3);
-    border-top: 4px solid #E0F11F;
+    border: 4px solid rgba(30, 215, 96, 0.3);
+    border-top: 4px solid var(--accent-main);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -461,6 +466,6 @@ body::-webkit-scrollbar {
 
 /* Focus styles for accessibility */
 .control-btn:focus, .auth-btn:focus, .progress-bar:focus {
-    outline: 2px solid #E0F11F;
+    outline: 2px solid var(--accent-main);
     outline-offset: 2px;
 }

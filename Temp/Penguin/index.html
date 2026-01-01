@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Go Out With Me?</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="heart-bg"></div>
+
+        <header class="header">
+            <h1 class="title">Will You Go Out With Me?</h1>
+            <p class="subtitle">Pick a date and place for our special day together</p>
+        </header>
+
+        <div class="form-container">
+            <div class="form-section">
+                <label for="date-picker">Choose a Date</label>
+                <input type="date" id="date-picker" class="date-input" required>
+            </div>
+
+            <div class="form-section">
+                <label for="place-selector">Where Should We Go?</label>
+                <select id="place-selector" class="place-select" required>
+                    <option value="">Select a place...</option>
+                    <option value="Coffee Shop">Coffee Shop</option>
+                    <option value="Restaurant">Restaurant</option>
+                    <option value="Movie Theater">Movie Theater</option>
+                    <option value="Park">Park</option>
+                    <option value="Museum">Museum</option>
+                    <option value="Beach">Beach</option>
+                    <option value="Arcade">Arcade</option>
+                    <option value="Ice Cream Shop">Ice Cream Shop</option>
+                    <option value="Bookstore">Bookstore</option>
+                    <option value="Surprise Me">Surprise Me!</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label for="message-input">Any Special Requests?</label>
+                <textarea id="message-input" class="message-input" placeholder="Optional: Tell me anything special you'd like..." rows="4"></textarea>
+            </div>
+
+            <div class="button-container">
+                <button id="yes-button" class="btn btn-yes">Yes! I'd Love To!</button>
+                <button id="maybe-button" class="btn btn-maybe">Let Me Think...</button>
+            </div>
+
+            <div id="response-message" class="response-message hidden"></div>
+        </div>
+
+        <div class="floating-hearts">
+            <span class="heart">💕</span>
+            <span class="heart">💗</span>
+            <span class="heart">💖</span>
+            <span class="heart">💝</span>
+            <span class="heart">💓</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+</body>
+</html>

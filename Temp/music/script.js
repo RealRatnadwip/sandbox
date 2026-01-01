@@ -400,8 +400,8 @@ Please add Google Drive file IDs to your CSV file:
         this.isShuffleMode = !this.isShuffleMode;
         
         if (this.isShuffleMode) {
-            this.shuffleBtn.innerHTML = '<i class="fas fa-random" style="color: #E0F11F;"></i>';
-            this.shuffleBtn.style.background = 'rgba(224, 241, 31, 0.2)';
+            this.shuffleBtn.innerHTML = '<i class="fas fa-random" style="color: #1DB954;"></i>';
+            this.shuffleBtn.style.background = 'rgba(30, 215, 96, 0.2)';
             console.log('Shuffle mode ON');
             
             // Create new shuffled playlist if not exists or recreate
@@ -417,8 +417,8 @@ Please add Google Drive file IDs to your CSV file:
         this.isLooping = !this.isLooping;
         
         if (this.isLooping) {
-            this.loopBtn.innerHTML = '<i class="fas fa-redo" style="color: #E0F11F;"></i>';
-            this.loopBtn.style.background = 'rgba(224, 241, 31, 0.2)';
+            this.loopBtn.innerHTML = '<i class="fas fa-redo" style="color: #1DB954;"></i>';
+            this.loopBtn.style.background = 'rgba(30, 215, 96, 0.2)';
             console.log('Loop mode ON');
         } else {
             this.loopBtn.innerHTML = '<i class="fas fa-redo"></i>';
@@ -852,8 +852,8 @@ Please add Google Drive file IDs to your CSV file:
             this.muteBtn.style.background = 'rgba(255, 255, 255, 0.1)';
         } else {
             this.audioPlayer.muted = true;
-            this.muteBtn.innerHTML = '<i class="fas fa-volume-mute" style="color: #E0F11F;"></i>';
-            this.muteBtn.style.background = 'rgba(224, 241, 31, 0.2)';
+            this.muteBtn.innerHTML = '<i class="fas fa-volume-mute" style="color: #1DB954;"></i>';
+            this.muteBtn.style.background = 'rgba(30, 215, 96, 0.2)';
         }
         this.isMuted = !this.isMuted;
     }
