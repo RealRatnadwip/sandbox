@@ -951,13 +951,13 @@ body {
     font-family: 'Dancing Script', cursive;
     padding: 0px 20px;
     text-indent: 20px;
-    font-size: 22px;
+    font-size: 19px;
     opacity: 0;
 }
 .boxMail .boxMail-container .card2:hover h2{
     animation: texth2 2s forwards;
     animation-delay: 4s;
-    transition: 1s;
+    transition: 0.5s;
 }
 @keyframes texth2{
     0%{
