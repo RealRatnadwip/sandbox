@@ -52,6 +52,25 @@ function getRemainingCounts() {
   return { live: Math.max(0, liveLeft), blank: Math.max(0, blankLeft) };
 }
 
+function updateButtonStates() {
+  if (gs.shellLineup.length === 0) {
+    fireBtn.disabled = true;
+    cycleBtn.disabled = true;
+    return;
+  }
+
+  const remaining = getRemainingCounts();
+  const currentShell = gs.shellLineup[0];
+
+  // Fire button: disabled if no live shells or current is definitely blank
+  const totalLiveLeft = remaining.live + (currentShell === ShellType.LIVE ? 1 : 0);
+  fireBtn.disabled = totalLiveLeft === 0 || currentShell === ShellType.BLANK;
+
+  // Cycle button: disabled if no blank shells or current is definitely live
+  const totalBlankLeft = remaining.blank + (currentShell === ShellType.BLANK ? 1 : 0);
+  cycleBtn.disabled = totalBlankLeft === 0 || currentShell === ShellType.LIVE;
+}
+
 // ========== CORE LOGIC ==========
 function reset() {
   gs.shellLineup = [];
@@ -61,6 +80,7 @@ function reset() {
   blankTotal = 0;
   livesUsed = 0;
   blanksUsed = 0;
+  console.clear()
   render();
 }
 
@@ -91,24 +111,9 @@ function populateShellLineUp() {
 function cycleShell(shellType) {
   if (gs.shellLineup.length === 0) return;
 
-  const remaining = getRemainingCounts();
   const currentShell = gs.shellLineup[0];
 
   if (shellType === ShellType.LIVE) {
-    // Trying to fire a live shell
-    const totalLiveLeft = remaining.live + (currentShell === ShellType.LIVE ? 1 : 0);
-    
-    if (totalLiveLeft === 0) {
-      alert('No live shells remaining.');
-      return;
-    }
-    
-    // Check if current shell is definitely blank
-    if (currentShell === ShellType.BLANK) {
-      alert('Current shell is BLANK, cannot fire.');
-      return;
-    }
-    
     console.log('Live fired.');
     
     // Mark the current shell as LIVE before removing it
@@ -116,20 +121,6 @@ function cycleShell(shellType) {
     livesUsed++;
     
   } else {
-    // Trying to cycle a blank shell
-    const totalBlankLeft = remaining.blank + (currentShell === ShellType.BLANK ? 1 : 0);
-    
-    if (totalBlankLeft === 0) {
-      alert('No blank shells remaining.');
-      return;
-    }
-    
-    // Check if current shell is definitely live
-    if (currentShell === ShellType.LIVE) {
-      alert('Current shell is LIVE, cannot cycle.');
-      return;
-    }
-    
     console.log('Blank cycled.');
     
     // Mark the current shell as BLANK before removing it
@@ -230,17 +221,19 @@ function render() {
   // If no shells, show message
   if (gs.shellLineup.length === 0) {
     lineupEl.innerHTML = '<p style="color:#777;font-size:14px">No shells loaded</p>';
-    return;
+  } else {
+    // Render each shell
+    gs.shellLineup.forEach((shell, i) => {
+      const div = document.createElement('div');
+      div.className = `shell ${shell}`;
+      div.textContent = `${i + 1}: ${shell}`;
+      if (i === 0) div.style.outline = '2px solid var(--accent)';
+      lineupEl.appendChild(div);
+    });
   }
-
-  // Render each shell
-  gs.shellLineup.forEach((shell, i) => {
-    const div = document.createElement('div');
-    div.className = `shell ${shell}`;
-    div.textContent = `${i + 1}: ${shell}`;
-    if (i === 0) div.style.outline = '2px solid var(--accent)';
-    lineupEl.appendChild(div);
-  });
+  
+  // Update button states
+  updateButtonStates();
 }
 
 // ========== EVENT HANDLERS ==========
