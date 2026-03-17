@@ -1,0 +1,248 @@
+:root {
+            --accent-main: #E0F11F;
+            --accent-secondary: #d2db68;
+            --text: #f1f2f3;
+            --bg-main: #121212;
+            --bg-secondary: #1e2124;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+        a {
+            text-decoration: none;
+        }
+
+        /* ── HEADER ─────────────────────────────────── */
+        header {
+            padding: 1em 2em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            border-bottom: 0.16em solid var(--text);
+            animation: slideDown 0.4s cubic-bezier(.22,1,.36,1) both;
+            gap: 1em;
+        }
+
+        .header-name {
+            font-family: 'Big Shoulders Display', sans-serif;
+            font-weight: 900;
+            font-size: clamp(1.7em, 4vw, 2.7em);
+            letter-spacing: -0.02em;
+            color: var(--text);
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .header-name span {
+            color: var(--accent-main);
+        }
+
+        /* pill-box link group */
+        .header-links {
+            display: flex;
+            align-items: stretch;
+            flex-shrink: 0;
+            border: 0.16em solid var(--text);
+        }
+
+        .header-links a {
+            font-family: 'DM Sans', sans-serif;
+            font-size: clamp(0.62em, 1.8vw, 0.75em);
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 0.45em 0.9em;
+            transition: background 0.1s, color 0.1s;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-links a:hover {
+            background: var(--accent-main);
+            color: var(--bg-main);
+        }
+
+        .header-links .divider {
+            width: 0.16em;
+            background: var(--text);
+            flex-shrink: 0;
+        }
+
+        /* Mobile: stack name above links */
+        @media (max-width: 30em) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.85em 1em;
+                gap: 0.5em;
+            }
+        }
+
+        /* ── MAIN ───────────────────────────────────── */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5em 1em;
+            min-height: 0;
+        }
+
+        /* ── CARD ───────────────────────────────────── */
+        .card {
+            background: var(--bg-secondary);
+            border-radius: 0;
+            padding: clamp(1.4em, 4vw, 2em);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1.2em;
+            width: min(22em, 92vw);
+            border: 0.18em solid var(--text);
+            box-shadow: 0.35em 0.35em 0 var(--accent-main);
+            animation: popIn 0.4s cubic-bezier(.22,1,.36,1) 0.1s both;
+            position: relative;
+            transition: box-shadow 0.12s, transform 0.12s;
+        }
+
+        .card:hover {
+            box-shadow: 0.5em 0.5em 0 var(--accent-main);
+            transform: translate(-0.12em, -0.12em);
+        }
+
+        /* ⚡ UPI tag floating top-right */
+        .card-tag {
+            position: absolute;
+            top: -0.18em;
+            right: -0.18em;
+            transform: translate(0%, -100%);
+            background: var(--accent-main);
+            color: var(--bg-main);
+            font-family: 'Big Shoulders Display', sans-serif;
+            font-weight: 900;
+            font-size: 0.68em;
+            letter-spacing: 0.1em;
+            padding: 0.28em 0.65em;
+            border: 0.2em solid var(--text);
+            white-space: nowrap;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        /* ── CARD LABEL ─────────────────────────────── */
+        .card-label {
+            font-size: 0.68em;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(241,242,243,0.4);
+            text-align: center;
+            line-height: 1.7;
+            border-bottom: 0.18em solid rgba(255,255,255,0.1);
+            padding-bottom: 1em;
+        }
+
+        .card-label .name-accent {
+            display: block;
+            font-size: 1.55em;
+            letter-spacing: 0.01em;
+            color: var(--accent-main);
+            font-weight: 900;
+            text-transform: none;
+            font-family: 'Big Shoulders Display', sans-serif;
+            line-height: 1.1;
+        }
+
+        /* ── QR IMAGE ───────────────────────────────── */
+        .qr-wrap {
+            align-self: center;
+            display: inline-flex;
+            border: 0.18em solid var(--text);
+            box-shadow: 0.22em 0.22em 0 var(--accent-main);
+            pointer-events: none;
+        }
+
+        .qr-wrap img {
+            display: block;
+            width: clamp(10em, 48vw, 13em);
+            height: auto;
+            object-fit: cover;
+            background: var(--bg-secondary);
+            pointer-events: none;
+        }
+
+        /* ── CARD META ──────────────────────────────── */
+        .card-meta p {
+            font-size: 0.68em;
+            color: rgba(241,242,243,0.3);
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        /* ── BUTTON ─────────────────────────────────── */
+        .pay-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55em;
+            background: var(--accent-main);
+            color: var(--bg-main);
+            font-family: 'Big Shoulders Display', sans-serif;
+            font-weight: 900;
+            font-size: 1.15em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.65em 1.5em;
+            border-radius: 0;
+            border: 0.18em solid var(--text);
+            cursor: pointer;
+            text-decoration: none;
+            transition: box-shadow 0.1s, transform 0.1s;
+            box-shadow: 0.25em 0.25em 0 var(--text);
+        }
+
+        .pay-btn:hover {
+            box-shadow: 0.42em 0.42em 0 var(--text);
+            transform: translate(-0.13em, -0.13em);
+        }
+
+        .pay-btn:active {
+            box-shadow: 0.05em 0.05em 0 var(--text);
+            transform: translate(0.1em, 0.1em);
+        }
+
+        .pay-btn i {
+            font-size: 0.85em;
+        }
+
+        /* ── ANIMATIONS ─────────────────────────────── */
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-1em); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translate(0.6em, 0.6em); }
+            to   { opacity: 1; transform: translate(0, 0); }
+        }
