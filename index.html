@@ -1,22 +1,506 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7RMRZEF68H"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
 
-  gtag('config', 'G-7RMRZEF68H');
-</script>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RealRatnadwip</title>
-  <link rel="icon" href="https://realratnadwip.github.io/Public/Media/Logo/128x128icon.png" type="image/x-icon">
-  <meta name="description" content="Portfolio of Ratnadwip Sarkar, a digital designer and engineer blending creativity and technology.">
-  <script>
-	window.location.replace("https://realratnadwip.github.io/Public/");
-  </script>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Explorer</title>
+    <style>
+        :root {
+            /* Light theme */
+            --bg-color: #f3f4f6;
+            --explorer-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --hover-bg: #f9fafb;
+            --accent: #2563eb;
+            --header-bg: #f8fafc;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark theme */
+                --bg-color: #111827;
+                --explorer-bg: #1f2937;
+                --text-main: #f9fafb;
+                --text-muted: #9ca3af;
+                --border-color: #374151;
+                --hover-bg: #374151;
+                --accent: #3b82f6;
+                --header-bg: #111827;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .explorer-container {
+            background-color: var(--explorer-bg);
+            width: 100%;
+            max-width: 1000px;
+            height: 75vh;
+            min-height: 400px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            resize: both;
+            /* Makes the window manually resizeable by the user */
+        }
+
+        .explorer-header {
+            background-color: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background-color: var(--hover-bg);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .path-bar {
+            flex-grow: 1;
+            background-color: var(--explorer-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .path-bar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .path-bar::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .path-segment {
+            cursor: pointer;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .path-segment:hover {
+            text-decoration: underline;
+        }
+
+        .path-separator {
+            margin: 0 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .view-btn {
+            background: none;
+            border: 1px solid transparent;
+            padding: 0.25rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        .view-btn.active {
+            color: var(--text-main);
+            background: var(--border-color);
+        }
+
+        .view-btn:hover:not(.active) {
+            background: var(--hover-bg);
+        }
+
+        .explorer-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 1rem;
+            align-content: start;
+        }
+
+        /* List View Modifier */
+        .explorer-content.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: background-color 0.15s;
+            text-align: center;
+            user-select: none;
+        }
+
+        .file-item:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.5rem;
+            fill: currentColor;
+        }
+
+        .folder-icon {
+            color: #facc15;
+        }
+
+        .document-icon {
+            color: #9ca3af;
+        }
+
+        .file-name {
+            font-size: 0.85rem;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* List View Overrides for file-item */
+        .explorer-content.list-view .file-item {
+            flex-direction: row;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0;
+        }
+
+        .explorer-content.list-view .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .explorer-content.list-view .file-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 0;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+
+        .explorer-content.list-view .file-name {
+            -webkit-line-clamp: 1;
+        }
+
+        .status-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 0;
+            }
+
+            .explorer-container {
+                height: 100vh;
+                border-radius: 0;
+                border: none;
+                resize: none;
+                /* Disable resizing on mobile */
+            }
+
+            .explorer-header {
+                flex-wrap: wrap;
+            }
+
+            .path-bar {
+                order: 3;
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
 </head>
+
+<body>
+
+    <div class="explorer-container">
+        <div class="explorer-header">
+            <div class="nav-buttons">
+                <button class="nav-btn" id="upBtn" title="Go up one level" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                </button>
+                <button class="nav-btn" id="homeBtn" title="Home">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="path-bar" id="pathBar">
+                <!-- Breadcrumb path generated here -->
+            </div>
+
+            <div class="view-toggle">
+                <button class="view-btn active" id="gridBtn" title="Grid View">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                </button>
+                <button class="view-btn" id="listBtn" title="List View">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="explorer-content" id="contentArea">
+            <!-- Files and Folders generated here -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const repoOwner = 'RealRatnadwip';
+            const repoName = 'sandbox';
+            const contentArea = document.getElementById('contentArea');
+            const pathBar = document.getElementById('pathBar');
+            const upBtn = document.getElementById('upBtn');
+            const homeBtn = document.getElementById('homeBtn');
+            const gridBtn = document.getElementById('gridBtn');
+            const listBtn = document.getElementById('listBtn');
+
+            let currentPath = '';
+
+            const folderIcon = `<svg class="file-icon folder-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`;
+            const fileIcon = `<svg class="file-icon document-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+
+            async function fetchContents(path) {
+                currentPath = path;
+                updatePathBar();
+                upBtn.disabled = !currentPath;
+
+                contentArea.innerHTML = '<div class="status-message"><div class="loader"></div>Loading...</div>';
+
+                try {
+                    // Fetch directory contents from GitHub API
+                    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
+                    const response = await fetch(apiUrl);
+
+                    if (!response.ok) {
+                        throw new Error(`Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Normalize data to array (just in case)
+                    let items = Array.isArray(data) ? data : [data];
+
+                    // Filter out hidden files
+                    // items = items.filter(item => !item.name.startsWith('.'));
+
+                    // Filter out index.html ONLY at the root so we don't hide nested index.html files
+                    if (path === '') {
+                        items = items.filter(item => item.name !== 'index.html');
+                    }
+
+                    // Sort items: Folders first, then alphabetically
+                    items.sort((a, b) => {
+                        if (a.type === b.type) return a.name.localeCompare(b.name);
+                        return a.type === 'dir' ? -1 : 1;
+                    });
+
+                    renderItems(items);
+                } catch (error) {
+                    contentArea.innerHTML = `<div class="status-message"><span>Failed to load contents.</span><span style="font-size: 0.85rem; opacity: 0.7;">${error.message}</span></div>`;
+                }
+            }
+
+            function renderItems(items) {
+                contentArea.innerHTML = '';
+
+                if (items.length === 0) {
+                    contentArea.innerHTML = '<div class="status-message">This folder is empty.</div>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    // Use a div for folders (to navigate in JS) and <a> for files (to open in new tab)
+                    const el = document.createElement(item.type === 'dir' ? 'div' : 'a');
+                    el.className = 'file-item';
+
+                    if (item.type === 'dir') {
+                        el.onclick = () => fetchContents(item.path);
+                        el.innerHTML = `${folderIcon}<span class="file-name">${item.name}</span>`;
+                    } else {
+                        // Link directly to the file for static hosting environments
+                        el.href = `./${item.path}`;
+                        el.target = "_blank";
+                        el.rel = "noopener noreferrer";
+                        el.innerHTML = `${fileIcon}<span class="file-name">${item.name}</span>`;
+                    }
+
+                    contentArea.appendChild(el);
+                });
+            }
+
+            function updatePathBar() {
+                pathBar.innerHTML = '';
+
+                // Root repository link
+                const rootSpan = document.createElement('span');
+                rootSpan.className = 'path-segment';
+                rootSpan.textContent = repoName;
+                rootSpan.onclick = () => fetchContents('');
+                pathBar.appendChild(rootSpan);
+
+                if (!currentPath) return;
+
+                const parts = currentPath.split('/');
+                let cumulativePath = '';
+
+                parts.forEach((part) => {
+                    const separator = document.createElement('span');
+                    separator.className = 'path-separator';
+                    separator.textContent = '/';
+                    pathBar.appendChild(separator);
+
+                    cumulativePath += (cumulativePath ? '/' : '') + part;
+                    const pathCopy = cumulativePath; // Create closure for the click handler
+
+                    const segmentSpan = document.createElement('span');
+                    segmentSpan.className = 'path-segment';
+                    segmentSpan.textContent = part;
+                    segmentSpan.onclick = () => fetchContents(pathCopy);
+                    pathBar.appendChild(segmentSpan);
+                });
+            }
+
+            // --- Event Listeners ---
+
+            upBtn.addEventListener('click', () => {
+                if (!currentPath) return;
+                const parts = currentPath.split('/');
+                parts.pop();
+                fetchContents(parts.join('/'));
+            });
+
+            homeBtn.addEventListener('click', () => {
+                fetchContents('');
+            });
+
+            gridBtn.addEventListener('click', () => {
+                contentArea.classList.remove('list-view');
+                gridBtn.classList.add('active');
+                listBtn.classList.remove('active');
+            });
+
+            listBtn.addEventListener('click', () => {
+                contentArea.classList.add('list-view');
+                listBtn.classList.add('active');
+                gridBtn.classList.remove('active');
+            });
+
+            // Initial fetch to load the root directory
+            fetchContents('');
+        });
+    </script>
+</body>
+
 </html>
