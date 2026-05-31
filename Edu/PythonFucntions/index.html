@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Functions Notes</title>
+</head>
+<body style="margin:0;font-family:Arial,sans-serif;background:#f4f4f4;color:#222;">  <div style="max-width:900px;margin:40px auto;padding:20px;">
+    <div style="background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+      <h1 style="text-align:center;color:#4b0082;">Python Functions Notes</h1>
+      <p style="text-align:center;color:#666;">Simple notes for understanding Python functions.</p><hr style="margin:25px 0;">
+
+  <h2>1. What is a Function?</h2>
+  <p>
+    A function is a block of reusable code used to perform a specific task.
+    Functions help reduce repetition and make programs easier to manage.
+  </p>
+
+  <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+
+<pre>def greet():
+    print("Hello")</pre></div>
+
+  <h2>2. Calling a Function</h2>
+  <p>After defining a function, we call it using its name followed by brackets.</p>
+
+  <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+
+<pre>greet()</pre></div>
+
+  <h2>3. Function with Parameters</h2>
+  <p>
+    Parameters allow us to pass values into a function.
+  </p>
+
+  <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+
+<pre>def add(a, b):
+    print(a + b)
+
+add(5, 3)</pre></div>
+
+  <h2>4. Return Statement</h2>
+  <p>
+    The return keyword sends a value back from the function.
+  </p>
+
+  <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+
+<pre>def square(n):
+    return n * n
+
+result = square(4)
+print(result)</pre></div>
+
+  <h2>5. Types of Functions</h2>
+  <ul>
+    <li>Built-in Functions → print(), len(), input()</li>
+    <li>User-defined Functions → Functions created by the programmer</li>
+  </ul>
+
+  <h2>6. Advantages of Functions</h2>
+  <ul>
+    <li>Code Reusability</li>
+    <li>Easy Debugging</li>
+    <li>Better Readability</li>
+    <li>Reduces Code Length</li>
+  </ul>
+
+  <h2>7. Example Program</h2>
+
+  <div style="background:#f0f0f0;padding:15px;border-radius:8px;font-family:monospace;">
+
+<pre>def factorial(n):
+    fact = 1
+
+    for i in range(1, n + 1):
+        fact = fact * i
+
+    return fact
+
+num = 5
+print("Factorial =", factorial(num))</pre></div>
+
+    </div>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SQL Commands Reference with Examples</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        h2 { margin-top: 40px; border-bottom: 2px solid #333; padding-bottom: 5px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #555; padding: 10px; text-align: left; }
+        th { background-color: #444; color: #fff; }
+        tr:nth-child(even) { background-color: #f0f0f0; }
+        .example { background: #1e1e1e; color: #ddd; border: 1px solid #ccc; padding: 10px; margin: 10px 0; font-family: monospace; }
+        .kw { color: #569CD6; } /* keywords */
+        .tbl { color: #4EC9B0; } /* table names */
+        .col { color: #9CDCFE; } /* column names */
+        .val { color: #CE9178; } /* values */
+        ul { margin: 5px 0 15px 20px; }
+    </style>
+</head>
+<body><h1>SQL Commands Reference with Examples</h1><h2>DDL Commands</h2>
+<ul>
+    <li><b>CREATE</b> — Create table/database</li>
+    <li><b>ALTER</b> — Modify structure</li>
+    <li><b>DROP</b> — Delete table</li>
+    <li><b>TRUNCATE</b> — Remove all data</li>
+</ul>
+<div class="example">
+<span class="kw">CREATE TABLE</span> <span class="tbl">Students</span> (
+    <span class="col">id</span> INT PRIMARY KEY,
+    <span class="col">name</span> VARCHAR(50),
+    <span class="col">age</span> INT
+);
+</div><h3>Example Table</h3>
+<table>
+<tr><th>ID</th><th>Name</th><th>Age</th></tr>
+<tr><td>1</td><td>John</td><td>20</td></tr>
+<tr><td>2</td><td>Alice</td><td>22</td></tr>
+</table><h2>DML Commands</h2>
+<div class="example">
+<span class="kw">INSERT INTO</span> <span class="tbl">Students</span>
+(<span class="col">id</span>, <span class="col">name</span>, <span class="col">age</span>)
+<span class="kw">VALUES</span> (1, <span class="val">'John'</span>, 20);<span class="kw">UPDATE</span> <span class="tbl">Students</span> <span class="kw">SET</span> <span class="col">age</span> = 21 <span class="kw">WHERE</span> <span class="col">id</span> = 1;
+
+<span class="kw">DELETE FROM</span> <span class="tbl">Students</span> <span class="kw">WHERE</span> <span class="col">id</span> = 1;
+
+</div><h2>DQL (SELECT)</h2>
+<div class="example">
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Students</span>;<span class="kw">SELECT</span> <span class="col">name</span>, <span class="col">age</span> <span class="kw">FROM</span> <span class="tbl">Students</span> <span class="kw">WHERE</span> <span class="col">age</span> > 18;
+
+</div><h2>Joins</h2>
+<div class="example">
+<span class="kw">SELECT</span> s.name, c.course_name
+<span class="kw">FROM</span> Students s
+<span class="kw">INNER JOIN</span> Courses c
+<span class="kw">ON</span> s.id = c.course_id;
+</div><h2>Advanced Topics</h2>
+<ul>
+    <li><b>INDEX</b> — Improves query speed</li>
+    <li><b>VIEW</b> — Virtual table</li>
+    <li><b>TRIGGER</b> — Auto-execute on events</li>
+    <li><b>PROCEDURE</b> — Stored SQL logic</li>
+</ul><h3>Index Example</h3>
+<div class="example">
+<span class="kw">CREATE INDEX</span> idx_name
+<span class="kw">ON</span> <span class="tbl">Students</span>(<span class="col">name</span>);
+</div><h3>View Example</h3>
+<div class="example">
+<span class="kw">CREATE VIEW</span> adult_students <span class="kw">AS</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Students</span>
+<span class="kw">WHERE</span> <span class="col">age</span> > 18;
+</div><h3>Trigger Example</h3>
+<div class="example">
+<span class="kw">CREATE TRIGGER</span> before_insert
+<span class="kw">BEFORE INSERT ON</span> <span class="tbl">Students</span>
+<span class="kw">FOR EACH ROW</span>
+<span class="kw">SET</span> NEW.name = UPPER(NEW.name);
+</div><h3>Stored Procedure</h3>
+<div class="example">
+<span class="kw">CREATE PROCEDURE</span> GetStudents()
+<span class="kw">BEGIN</span>
+    <span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">Students</span>;
+<span class="kw">END</span>;
+</div></body>
+</html>

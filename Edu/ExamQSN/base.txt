@@ -1,0 +1,554 @@
+Section A: Basic Computer and Web
+
+Q1. (20 Marks) Answer the following fundamental computer concepts:
+a) What is a CPU and what is its primary function?
+b) State the main difference between RAM and ROM.
+c) What is an Operating System (OS)?
+d) What is the purpose of an IP Address?
+
+Q2. (20 Marks) Define the following web browser terms:
+a) What is a web browser?
+b) What is the purpose of the browser 'cache'?
+c) What does URL stand for?
+d) What is a 'cookie' in the context of web browsing?
+
+Q3. (20 Marks) Answer these basic HTML and CSS questions:
+a) What does HTML stand for and what is its role?
+b) What does CSS stand for and what is its role?
+c) Write a CSS rule to select an element with the ID header and set its background color to blue.
+d) Write the HTML tag used to create a hyperlink.
+
+
+
+
+Section B: C Programming
+
+Q4. (20 Marks) Answer the following about C fundamentals:
+a) What is the syntax to include a standard library header file like "Standard Input/Output"?
+b) What is the purpose of the main() function in C?
+c) What punctuation mark is used to end most statements in C?
+d) What is the data type used to store a whole number (e.g., 5, -10)?
+
+Q5. (20 Marks) Answer these questions about C variables and I/O:
+a) Write the C syntax to declare an integer variable named count and initialize it to 0.
+b) Which function is used to print output to the console?
+c) Which function is used to read formatted input from the console?
+d) What is the format specifier for printing an integer (int)?
+
+Q6. (20 Marks) Define the following C control structures:
+a) What keyword is used for conditional execution (i.e., to check if a condition is true)?
+b) What is the keyword for a loop that checks the condition before each iteration?
+c) What is the keyword for a loop that executes at least once and checks the condition after the iteration?
+d) What keyword is used to define a constant (a variable that cannot be changed)?
+
+
+
+
+Section C: Python Programming
+
+Q7. (20 Marks) Answer the following Python fundamentals:
+a) Is Python generally considered a compiled or an interpreted language?
+b) What symbol is used to start a single-line comment in Python?
+c) Which keyword is used to define a function in Python?
+d) How do you print the text "Hello" to the console in Python?
+
+Q8. (20 Marks) Answer these questions about Python data structures:
+a) What is the primary difference between a List and a Tuple?
+b) What data structure is used to store key-value pairs?
+c) What syntax is used to create an empty list?
+d) How is a code block (like in a loop or function) defined in Python (e.g., {}, indentation, etc.)?
+
+Q9. (20 Marks) Answer these Python variable and operator questions:
+a) Do you need to declare a variable's data type before using it in Python? (Yes/No)
+b) Write the syntax to assign the value 10 to a variable named x.
+c) What operator is used to check for equality (if two values are equal)?
+d) What operator is used to get the remainder of a division (modulo)?
+
+
+
+
+Section D: SQL Database Programming
+
+Q10. (20 Marks) Answer the following core SQL concepts:
+a) What does SQL stand for and what is its primary purpose?
+b) What is a Database Management System (DBMS)?
+c) What is the difference between a database and a table?
+d) What keyword is used to retrieve data from a table?
+
+Q11. (20 Marks) Define these basic SQL Data Definition and Manipulation terms:
+a) What is a Primary Key?
+b) What is a Foreign Key?
+c) What SQL command/keyword is used to add new rows to a table?
+d) What SQL command/keyword is used to remove rows from a table?
+
+Q12. (20 Marks) Answer these SQL syntax and query questions:
+a) How do you select all columns from a table named employees?
+b) Which clause is used to filter rows based on a specific condition?
+c) What keyword is used to sort the result set of a query?
+d) What operator is used to search for a specified pattern in a column?
+
+
+
+
+Answer Key
+
+Section A: Basic Computer and Web
+
+A1:
+a) CPU (Central Processing Unit): The "brain" of the computer that performs calculations and executes instructions.
+b) RAM (Random Access Memory) is volatile (loses data when power is off) and is used for active tasks. ROM (Read-Only Memory) is non-volatile (keeps data) and stores permanent instructions like system boot-up.
+c) Operating System: Software that manages all computer hardware and software resources (e.g., Windows, macOS, Linux).
+d) IP Address: A unique numerical label assigned to a device on a network, used to identify it and allow communication.
+
+A2:
+a) Web Browser: A software application used to access, retrieve, and display information (like web pages) on the World Wide Web.
+b) Cache: A temporary storage area that saves copies of web pages, images, and files to make the browser load them faster on future visits.
+c) URL: Uniform Resource Locator (the address of a resource on the internet, e.g., https://www.google.com).
+d) Cookie: A small piece of data sent from a website and stored on the user's computer by the browser, used to remember information about the user (like login status or items in a cart).
+
+A3:
+a) HTML (HyperText Markup Language): Used to structure the content of a web page (e.g., headings, paragraphs, links).
+b) CSS (Cascading Style Sheets): Used to style the appearance and layout of a web page (e.g., colors, fonts, positioning).
+c) #header { background-color: blue; }
+d) The <a> tag (anchor tag).
+
+
+
+
+Section B: C Programming
+
+A4:
+a) #include <stdio.h>
+b) It is the entry point of the C program; execution begins from this function.
+c) The semicolon (;).
+d) int
+
+A5:
+a) int count = 0;
+b) printf()
+c) scanf()
+d) %d
+
+A6:
+a) if
+b) while
+c) do (used as do...while)
+d) const
+
+
+
+
+Section C: Python Programming
+
+A7:
+a) Interpreted.
+b) The hash symbol (#).
+c) def
+d) print("Hello")
+
+A8:
+a) A List is mutable (can be changed) and uses square brackets []. A Tuple is immutable (cannot be changed) and uses parentheses ().
+b) A Dictionary.
+c) [] or list()
+d) Indentation.
+
+A9:
+a) No.
+b) x = 10
+c) ==
+d) The percent symbol (%).
+
+
+
+
+Section D: SQL Database Programming
+
+A10:
+a) SQL stands for Structured Query Language. Its primary purpose is to store, manipulate, and retrieve data in a relational database.
+b) A Database Management System (DBMS) is software used to manage databases, allowing users to store, retrieve, and update information (e.g., MySQL, PostgreSQL, SQLite).
+c) A database is a container that holds a collection of data tables and other related objects. A table is a structured set of data within the database consisting of vertical columns and horizontal rows.
+d) SELECT
+
+A11:
+a) Primary Key: A column (or set of columns) that uniquely identifies each row in a table. It cannot contain NULL values and must be unique.
+b) Foreign Key: A column (or set of columns) in one table that refers to the Primary Key in another table, establishing a link/relationship between them.
+c) INSERT (specifically INSERT INTO)
+d) DELETE (specifically DELETE FROM)
+
+A12:
+a) SELECT * FROM employees;
+b) The WHERE clause.
+c) ORDER BY
+d) The LIKE operator.
+
+
+
+
+Section A: Basic Computer and Web
+
+Q1. (5 Marks) Explain why an Operating System (OS) is essential for a modern computer.
+A1: An Operating System acts as the primary manager for the computer's hardware and software. It is essential because it handles fundamental tasks like memory management, process scheduling, and file storage. It also provides a user interface (like a desktop or command line) so a human can interact with the machine, and it allows different applications (like a browser and a word processor) to run simultaneously without interfering with each other.
+
+Q2. (5 Marks) Describe the relationship between HTML and CSS. Why is it considered good practice to keep them in separate files?
+A2: HTML (HyperText Markup Language) provides the structure and content of a web page (e.g., the headings, paragraphs, and images). CSS (Cascading Style Sheets) provides the style and presentation (e.g., the colors, fonts, and layout). Keeping them separate (e.g., an .html file and a .css file) is good practice for "Separation of Concerns." This makes the code cleaner, easier to maintain, and reusable. A single CSS file can style many HTML pages, ensuring a consistent look and feel across an entire website.
+
+Q3. (5 Marks) Explain what a browser 'cache' is used for. Why might a user need to manually clear their cache?
+A3: A browser cache is a temporary storage area on the user's computer. When you visit a website, the browser downloads elements like logos, images, and CSS files and saves them in the cache. On your next visit, the browser can load these files directly from the cache instead of re-downloading them, which makes the page load much faster. A user might need to clear their cache if a website has been updated, but the browser is still loading the old, cached version. Clearing it forces the browser to download the new files.
+
+
+
+
+Section B: C Programming
+
+Q4. (5 Marks) Explain the purpose of a header file (like stdio.h) in C. Why not just write all the code, including functions like printf, in your main .c file?
+A4: A header file (.h) contains function declarations, macros, and type definitions. When you #include <stdio.h>, you are telling the compiler, "I intend to use functions declared in this file (like printf and scanf)." This allows the compiler to check that you are using the functions correctly (e.g., correct number of arguments). The actual definition (the compiled code) for printf is linked later. This approach promotes modularity, reusability, and keeps your source code clean, as you don't have to redefine standard functions every time.
+
+Q5. (5 Marks) Compare and contrast a while loop and a do...while loop. In what situation would you specifically choose a do...while loop?
+A5: Both while and do...while are loops that repeat a block of code as long as a condition is true. The key difference is when the condition is checked.
+A while loop is a "pre-test" loop. It checks the condition before running the loop body. If the condition is false the first time, the loop body will never execute.
+A do...while loop is a "post-test" loop. It runs the loop body first and then checks the condition. This guarantees the loop body will always execute at least one time. You would specifically use a do...while loop when you need an action to happen at least once, such as presenting a menu to a user and then asking if they want to repeat the action.
+
+Q6. (5 Marks) Explain the concept of "scope" in C, using the terms "global variable" and "local variable."
+A6: "Scope" refers to the region of a program where a variable can be seen and accessed.
+A local variable is declared inside a function (or code block like a loop). Its scope is limited to that function. It is created when the function starts and destroyed when the function ends. No other function can see or use it.
+A global variable is declared outside of all functions, usually at the top of the file. Its scope is the entire program, meaning any function can access and modify it.
+
+
+
+
+Section C: Python Programming
+
+Q7. (5 Marks) Python is often described as a "dynamically-typed" language. What does this mean, and how does it differ from a "statically-typed" language like C or Java?
+A7: "Dynamically-typed" means that in Python, you do not have to declare a variable's data type. A variable (e.g., x) is just a name, and its type is determined at runtime based on the value assigned to it (e.g., x = 10 makes x an integer, and x = "hello" later makes the same variable a string). In a "statically-typed" language like C or Java, you must explicitly declare the variable's type (e.g., int x;) and it cannot be changed. This provides more type-safety at compile-time but is less flexible.
+
+Q8. (5 Marks) Explain the key difference between a Python List and a Tuple. Why would you ever choose to use a Tuple when a List seems more flexible?
+A8: The key difference is mutability.
+A List (e.g., [1, 2, 3]) is mutable, meaning you can add, remove, or change elements after it's created.
+A Tuple (e.g., (1, 2, 3)) is immutable, meaning once it's created, it cannot be changed. You would choose a Tuple when you want to store data that should not be accidentally modified. Because they are immutable, Tuples are also "hashable," which means they can be used as keys in a dictionary, whereas Lists cannot. They can also be slightly more memory-efficient.
+
+Q9. (5 Marks) Describe the importance of indentation in Python. How does this differ from how languages like C or Java define code blocks?
+A9: In Python, indentation is not just for readability; it is a syntactic rule. It is used to define code blocks (e.g., the body of a function, a loop, or an if statement). The code that is indented under a statement is considered part of that block. In languages like C and Java, code blocks are defined explicitly using curly braces ({ ... }). Indentation in those languages is only for human readability and is ignored by the compiler.
+
+
+
+
+Section D: SQL Database Programming
+
+Q10. (5 Marks) Explain the concept of a "Relational Database" and how it organizes data. What is the standard language used to interact with it?
+A10: A Relational Database organizes data into one or more tables (or "relations") of columns and rows, where each row represents a unique record and each column represents a data attribute. Tables can be linked-or related-based on common data. The standard language used to interact with a relational database is SQL (Structured Query Language), which allows users to query, update, and manage the data easily.
+
+Q11. (5 Marks) Explain the difference between a "Primary Key" and a "Foreign Key" using a database relation analogy (e.g., Customers and Orders).
+A11: A Primary Key is a unique identifier for a record in a table, ensuring no two rows are identical (e.g., CustomerID in a Customers table). A Foreign Key is a column in a table that references the Primary Key of another table to create a relationship (e.g., CustomerID in an Orders table). This link ensures referential integrity; for instance, you cannot place an order for a customer who doesn't exist in the Customers table.
+
+Q12. (5 Marks) Compare and contrast the WHERE clause and the HAVING clause in SQL. In what specific situation must you use HAVING?
+A12: Both clauses are used to filter data, but they operate at different stages. The WHERE clause is used to filter individual rows before any groupings are made (e.g., SELECT * FROM products WHERE price > 50). The HAVING clause is used to filter groups created by the GROUP BY clause (e.g., filtering grouped categories that have a count of items greater than 5: HAVING COUNT(*) > 5). You must use HAVING when filtering is based on an aggregate function like SUM, AVG, or COUNT.
+
+
+
+
+Section A: Basic Computer and Web
+
+Q1. What is the difference between hardware and software?
+A1. Hardware refers to the physical components of a computer (like the CPU, monitor, and keyboard). Software refers to the non-physical programs and instructions that run on the hardware (like the operating system or a web browser).
+
+Q2. What does RAM stand for, and what is its primary use?
+A2. RAM stands for Random Access Memory. It is volatile (temporary) memory used by the computer to store data for actively running programs, allowing for fast access and multitasking.
+
+Q3. What is the main purpose of a web browser?
+A3. A web browser (like Chrome or Firefox) is a software application used to retrieve, present, and traverse information resources on the World Wide Web, primarily by interpreting HTML, CSS, and JavaScript.
+
+Q4. What is the difference between an HTML id attribute and a class attribute?
+A4. An id must be unique to a single element on a page (e.g., #header). A class can be applied to multiple elements to group them (e.g., .list-item).
+
+Q5. What is the HTML tag for creating a hyperlink, and what attribute defines its destination?
+A5. The tag is <a> (anchor tag). The href attribute defines the destination URL.
+
+Q6. What does CSS stand for, and what problem does it solve?
+A6. CSS stands for Cascading Style Sheets. It solves the problem of presentation by separating the document's content (HTML) from its visual style (CSS), allowing for cleaner code and easier site-wide style changes.
+
+
+
+
+Section B: C Programming
+
+Q1. What character is used to terminate almost every statement in C?
+A1. The semicolon (;).
+
+Q2. What is the preprocessor directive used to include a standard library file like "Standard Input/Output"?
+A2. #include <stdio.h>
+
+Q3. What is the name of the function that serves as the entry point for every C program?
+A3. The main() function.
+
+Q4. What function is used to read formatted input from the user (e.g., an integer)?
+A4. The scanf() function (e.g., scanf("%d", &variableName);).
+
+Q5. What is the difference between the & and * operators in the context of pointers?
+A5. & is the "address-of" operator (gets the memory address of a variable). * is the "dereference" operator (gets the value at a memory address).
+
+Q6. What is the keyword used to define a variable that cannot be modified after it is initialized?
+A6. const
+
+
+
+
+Section C: Python Programming
+
+Q1. How does Python define a code block (e.g., the body of a loop or function)?
+A1. Python uses indentation (consistent spaces or tabs) to define code blocks.
+
+Q2. What is the built-in function used to get the number of items in a list or string?
+A2. The len() function (e.g., len(my_list)).
+
+Q3. What is the main difference between a Python List and a Tuple?
+A3. A List is mutable (can be changed after creation) and uses square brackets []. A Tuple is immutable (cannot be changed) and uses parentheses ().
+
+Q4. What data structure in Python is used to store data as key-value pairs?
+A4. A Dictionary (e.g., {'name': 'Alice', 'age': 30}).
+
+Q5. What keyword is used to define a function in Python?
+A5. The def keyword.
+
+Q6. How do you add a new item to the end of a list?
+A6. By using the .append() method (e.g., my_list.append(new_item)).
+
+
+
+
+Section D: SQL Database Programming
+
+Q1. What does SQL stand for, and what is its primary use?
+A1. SQL stands for Structured Query Language. It is used to communicate with, manage, and manipulate relational databases.
+
+Q2. What SQL command/keyword is used to retrieve data from a database?
+A2. The SELECT command.
+
+Q3. How do you write a single-line comment and a multi-line comment in standard SQL?
+A3. A single-line comment starts with -- (two hyphens). A multi-line comment starts with /* and ends with */.
+
+Q4. What is the difference between the SQL keywords DROP and TRUNCATE when deleting a table?
+A4. DROP deletes the entire table structure along with all its data. TRUNCATE removes all the rows from a table but keeps the table structure intact for future use.
+
+Q5. What keyword is used to combine rows from two or more tables based on a related column between them?
+A5. The JOIN keyword (or INNER JOIN).
+
+Q6. What is the purpose of the GROUP BY clause in SQL?
+A6. The GROUP BY clause groups rows that have the same values into summary rows, often used with aggregate functions (like COUNT, SUM, AVG) to group the result-set.
+
+
+
+
+Section A: Basic Computer and Web
+
+True / False: RAM (Random Access Memory) is volatile, meaning it loses its data when the computer is turned off.
+True / False: The CPU (Central Processing Unit) is responsible for storing files long-term.
+True / False: HTML is a programming language used to create dynamic web applications.
+True / False: CSS (Cascading Style Sheets) is used to define the style and layout of an HTML document.
+True / False: In HTML, the id attribute can be used on multiple elements, but the class attribute must be unique to one element.
+True / False: A web browser's cache stores copies of web page elements to speed up loading times on future visits.
+
+
+
+
+Section B: C Programming
+
+True / False: Every C program must have a function named start().
+True / False: A semicolon (;) is used to end most statements in C.
+True / False: The #include directive is used to define a new variable.
+True / False: In C, int x = 10; and Int x = 10; are syntactically the same because C is not case-sensitive.
+True / False: The printf() function is used to read formatted input from the user.
+True / False: The & operator is used to get the memory address of a variable.
+
+
+
+
+Section C: Python Programming
+
+True / False: Python uses significant indentation (whitespace) to define code blocks.
+True / False: A Python List is immutable, meaning it cannot be changed after creation.
+True / False: The def keyword is used to define a new variable in Python.
+True / False: Python is a statically-typed language, meaning you must declare a variable's data type before assigning a value.
+True / False: A Python Dictionary stores data in ordered, indexed sequences.
+True / False: The # symbol is used to start a single-line comment in Python.
+
+
+
+
+Section D: SQL Database Programming
+
+True / False: SQL is only used to retrieve data and cannot be used to delete or update data.
+True / False: A Primary Key column in a database table can contain duplicate values and NULL values.
+True / False: The WHERE clause can be used to filter rows based on aggregate functions like SUM() or COUNT().
+True / False: An INNER JOIN returns only the rows that have matching values in both tables.
+True / False: In SQL, the INSERT INTO statement is used to add new records to a table.
+True / False: The ORDER BY clause is used to sort the result-set in ascending or descending order.
+
+
+
+
+Answer Key
+
+Basic Computer and Web
+True
+False (This is the job of a hard drive or SSD. The CPU processes data.)
+False (It is a markup language used for structure.)
+True
+False (It is the opposite: id must be unique, class can be used on many.)
+True
+
+C Programming
+False (It must have a main() function.)
+True
+False (It is used to include header files/libraries.)
+False (C is case-sensitive. Int would be an error.)
+False (It is used to print output. scanf() is used to read input.)
+True
+
+Python Programming
+True
+False (Lists are mutable. Tuples are immutable.)
+False (It is used to define a function.)
+False (It is dynamically-typed.)
+False (It stores data in key-value pairs. Lists/Tuples are indexed sequences.)
+True
+
+SQL Database Programming
+False (SQL can also update, insert, and delete data using DML commands.)
+False (A Primary Key must contain unique, non-null values.)
+False (Aggregate functions must be filtered using the HAVING clause, not WHERE.)
+True
+True
+True
+
+
+
+
+Section A: Basic Computer and Web
+
+The physical components of a computer that you can touch, like the monitor and keyboard, are called ________.
+The ________ (Central Processing Unit) is often called the "brain" of the computer.
+________ (Random Access Memory) is volatile memory used to store data for programs that are currently running.
+An ________ ________ (like Windows or macOS) manages all the computer's hardware and software.
+A software application used to access and view websites on the internet is called a ________.
+The unique address of a webpage, like https://www.google.com, is called a ________ (Uniform Resource Locator).
+________ stands for HyperText Markup Language and is used to create the structure of a web page.
+____ stands for Cascading Style Sheets and is used to control the visual presentation and layout of a web page.
+The HTML tag used to define the largest heading is <___>.
+The HTML tag used to create a hyperlink is <___>, and its destination is set with the href attribute.
+To apply a style to one specific, unique element on a page, you would use the HTML ________ attribute.
+To apply a style to multiple elements on a page, you would use the HTML ________ attribute.
+
+
+
+
+Section B: C Programming
+
+Every C program's execution begins at the ________ function.
+Almost every statement in C must end with a ________.
+The preprocessor directive #include <________.h> is used to include the standard input-output library.
+The ________ function is used to print formatted text to the console.
+The ______ function is used to read formatted input from the user.
+The format specifier ______ is used with printf() and scanf() for an integer (int).
+The _____ operator is used to get the memory address of a variable.
+A variable that stores a memory address is called a ________.
+The keyword _____ is used to define a variable whose value cannot be changed.
+A while loop checks its condition ________ (before/after) executing the loop's body.
+A do...while loop is guaranteed to execute at least _____ time(s).
+A single-line comment in C starts with ______.
+
+
+
+
+Section C: Python Programming
+
+Python uses ________ to define code blocks, rather than curly braces or keywords.
+A single-line comment in Python starts with the ________ symbol.
+The ____ keyword is used to define a new function.
+The built-in ________() function is used to display output on the console.
+A ________ is a mutable (changeable) ordered collection, created with square brackets [].
+A ________ is an immutable (unchangeable) ordered collection, created with parentheses ().
+A ________ is an unordered collection of key-value pairs, created with curly braces {}.
+To add a new item to the end of a list, you use the list's ________() method.
+Python is a ________-typed language, meaning you do not need to declare a variable's data type.
+The _____() function is used to get the number of items in a list or the length of a string.
+The ____ operator is used to check for value equality.
+The for loop in Python is used to ________ over a sequence (like a list or string).
+
+
+
+
+Section D: SQL Database Programming
+
+SQL stands for ________ Query Language.
+A ________ database organizes data into tables of columns and rows.
+The ________ Key constraint uniquely identifies each record in a database table.
+A ________ Key is a field in one table that refers to the Primary Key in another table.
+The ________ clause is used to filter records in a SELECT, UPDATE, or DELETE query.
+To retrieve only distinct (non-duplicate) values, the SELECT ________ statement is used.
+The ________ statement is used to add new rows of data into a table.
+The ________ statement is used to modify existing records in a table.
+To delete a table's structure completely from the database, you use the ________ statement.
+The ________ clause is used to sort the output of a query in ascending or descending order.
+The ________ operator is used in a WHERE clause to search for a specified pattern in a column.
+To combine columns from multiple tables based on a related key, you use the ________ keyword.
+
+
+
+
+Answer Key
+
+Basic Computer and Web
+hardware
+CPU
+RAM
+Operating System
+browser
+URL
+HTML
+CSS
+h1
+a
+id
+class
+
+Basic C
+main
+semicolon (;)
+stdio
+printf
+scanf
+%d
+& (ampersand)
+pointer
+const
+before
+one
+//
+
+Basic Python
+indentation
+# (hash)
+def
+print
+list
+tuple
+dictionary
+append
+dynamically
+len
+==
+iterate
+
+Basic SQL
+Structured
+relational
+Primary
+Foreign
+WHERE
+DISTINCT
+INSERT
+UPDATE
+DROP
+ORDER BY
+LIKE
+JOIN
